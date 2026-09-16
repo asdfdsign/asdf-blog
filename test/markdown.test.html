@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>markdown.js 테스트</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { font-family: system-ui, sans-serif; margin: 0; padding: 1.5rem; max-width: 64rem; margin-inline: auto; line-height: 1.5; }
+    h1 { font-size: 1.25rem; margin: 0 0 0.5rem; }
+    #summary { font-weight: 700; margin-bottom: 1.5rem; }
+    #summary.ok { color: #1a7f37; }
+    #summary.fail { color: #c8202a; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    th, td { border: 1px solid #8884; padding: 0.4rem 0.6rem; text-align: left; vertical-align: top; }
+    th { background: #8881; }
+    td.status { width: 3rem; font-weight: 700; text-align: center; }
+    tr.pass td.status { color: #1a7f37; }
+    tr.fail { background: #c8202a14; }
+    tr.fail td.status { color: #c8202a; }
+    pre { margin: 0; white-space: pre-wrap; word-break: break-all; font-size: 0.8125rem; }
+    .label { color: #888; font-size: 0.75rem; display: block; margin-top: 0.25rem; }
+  </style>
+</head>
+<body>
+  <h1>markdown.js 테스트</h1>
+  <p id="summary">실행 중…</p>
+  <table>
+    <thead><tr><th></th><th>케이스</th><th>입력</th><th>결과</th></tr></thead>
+    <tbody id="results"></tbody>
+  </table>
+
+  <script type="module">
+    import { render, parseFrontmatter } from '../js/markdown.js';
+
+    const cases = [
+      { name: '빈 입력', input: '', expected: '' },
+      { name: '제목 h1', input: '# 제목', expected: '<h1>제목</h1>' },
+      { name: '제목 h6', input: '###### 여섯', expected: '<h6>여섯</h6>' },
+      { name: '# 뒤 공백 없으면 문단', input: '#태그아님', expected: '<p>#태그아님</p>' },
+      { name: '문단 병합', input: '첫 줄\n둘째 줄', expected: '<p>첫 줄\n둘째 줄</p>' },
+      { name: '빈 줄로 문단 분리', input: '하나\n\n둘', expected: '<p>하나</p>\n<p>둘</p>' },
+      { name: '굵게', input: '**굵게**', expected: '<p><strong>굵게</strong></p>' },
+      { name: '기울임', input: '*기울임*', expected: '<p><em>기울임</em></p>' },
+      { name: '취소선', input: '~~취소~~', expected: '<p><del>취소</del></p>' },
+      { name: '굵게 안 기울임', input: '**굵게 *속* 굵게**', expected: '<p><strong>굵게 <em>속</em> 굵게</strong></p>' },
+      { name: '인라인 코드', input: '이건 `code`', expected: '<p>이건 <code>code</code></p>' },
+      { name: '인라인 코드 안 HTML 이스케이프', input: '`<b>x</b>`', expected: '<p><code>&lt;b&gt;x&lt;/b&gt;</code></p>' },
+      { name: '인라인 코드 안 * 는 강조 아님', input: '`a * b * c`', expected: '<p><code>a * b * c</code></p>' },
+      { name: '본문 HTML 이스케이프', input: '<script>alert(1)<\/script>', expected: '<p>&lt;script&gt;alert(1)&lt;/script&gt;</p>' },
+      { name: '코드 블록 + 언어', input: '```js\nconst a = 1;\n```', expected: '<pre data-lang="js"><code class="language-js" data-lang="js">const a = 1;</code></pre>' },
+      { name: '코드 블록 언어 없음', input: '```\nplain\n```', expected: '<pre><code>plain</code></pre>' },
+      { name: '코드 블록 안 이스케이프·문법 무시', input: '```\n<div>**x**</div>\n```', expected: '<pre><code>&lt;div&gt;**x**&lt;/div&gt;</code></pre>' },
+      { name: '코드 블록 여러 줄 보존', input: '```\na\n\nb\n```', expected: '<pre><code>a\n\nb</code></pre>' },
+      { name: '링크 (상대)', input: '[홈](#/)', expected: '<p><a href="#/">홈</a></p>' },
+      { name: '링크 (외부 → 새 탭)', input: '[MDN](https://mdn.dev)', expected: '<p><a href="https://mdn.dev" target="_blank" rel="noopener">MDN</a></p>' },
+      { name: 'javascript: 링크 차단', input: '[x](javascript:alert(1))', expected: '<p><a href="#">x</a></p>' },
+      { name: '이미지', input: '![대체](a.png)', expected: '<p><img src="a.png" alt="대체"></p>' },
+      { name: '순서 없는 목록', input: '- a\n- b', expected: '<ul><li>a</li><li>b</li></ul>' },
+      { name: '* 로 시작하는 목록', input: '* a\n* b', expected: '<ul><li>a</li><li>b</li></ul>' },
+      { name: '순서 있는 목록', input: '1. a\n2. b', expected: '<ol><li>a</li><li>b</li></ol>' },
+      { name: '목록 항목 안 인라인', input: '- **굵게** 와 `코드`', expected: '<ul><li><strong>굵게</strong> 와 <code>코드</code></li></ul>' },
+      { name: '인용', input: '> 인용', expected: '<blockquote><p>인용</p></blockquote>' },
+      { name: '인용 여러 줄 병합', input: '> a\n> b', expected: '<blockquote><p>a\nb</p></blockquote>' },
+      { name: '수평선', input: '---', expected: '<hr>' },
+      { name: '수평선 (***)', input: '***', expected: '<hr>' },
+      { name: '프런트매터 제거', input: '---\ntitle: x\n---\n본문', expected: '<p>본문</p>' },
+      { name: '프런트매터 없이 시작하는 --- 는 hr', input: '본문\n\n---\n\n뒤', expected: '<p>본문</p>\n<hr>\n<p>뒤</p>' },
+      { name: 'CRLF 줄바꿈', input: '# 제목\r\n\r\n문단', expected: '<h1>제목</h1>\n<p>문단</p>' },
+      { name: '문단 뒤 바로 제목', input: '문단\n## 제목', expected: '<p>문단</p>\n<h2>제목</h2>' },
+      { name: '문단 뒤 바로 목록', input: '문단\n- 항목', expected: '<p>문단</p>\n<ul><li>항목</li></ul>' },
+    ];
+
+    // parseFrontmatter 단독 테스트
+    const fmCases = [
+      {
+        name: '프런트매터 meta 파싱',
+        run: () => JSON.stringify(parseFrontmatter('---\ntitle: 제목\ntags: [a, b]\n---\nx').meta),
+        expected: '{"title":"제목","tags":["a","b"]}',
+      },
+      {
+        name: '프런트매터 없음',
+        run: () => JSON.stringify(parseFrontmatter('x').meta),
+        expected: '{}',
+      },
+    ];
+
+    const tbody = document.getElementById('results');
+    let pass = 0, fail = 0;
+
+    function row(name, input, expected, actual) {
+      const ok = actual === expected;
+      ok ? pass++ : fail++;
+      const tr = document.createElement('tr');
+      tr.className = ok ? 'pass' : 'fail';
+      const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+      tr.innerHTML = `
+        <td class="status">${ok ? 'PASS' : 'FAIL'}</td>
+        <td>${esc(name)}</td>
+        <td><pre>${esc(input)}</pre></td>
+        <td>
+          ${ok ? `<pre>${esc(actual)}</pre>` : `
+            <span class="label">기대</span><pre>${esc(expected)}</pre>
+            <span class="label">실제</span><pre>${esc(actual)}</pre>`}
+        </td>`;
+      tbody.append(tr);
+    }
+
+    for (const c of cases) {
+      let actual;
+      try { actual = render(c.input); } catch (e) { actual = `THROW: ${e.message}`; }
+      row(c.name, c.input, c.expected, actual);
+    }
+    for (const c of fmCases) {
+      let actual;
+      try { actual = c.run(); } catch (e) { actual = `THROW: ${e.message}`; }
+      row(c.name, '(parseFrontmatter)', c.expected, actual);
+    }
+
+    const summary = document.getElementById('summary');
+    summary.textContent = `${pass} passed / ${fail} failed`;
+    summary.className = fail ? 'fail' : 'ok';
+    document.title = `${fail ? '✗' : '✓'} ${pass}/${pass + fail} — markdown.js`;
+  </script>
+</body>
+</html>

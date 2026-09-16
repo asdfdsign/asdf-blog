@@ -21,6 +21,7 @@
 
 ```
 CLAUDE.md              # 이 파일
+.nojekyll              # GitHub Pages 의 Jekyll 을 끈다. 없으면 .md 가 404 (배포 절 참고)
 .claude/launch.json    # 로컬 서버 설정 (python -m http.server 8000). Browser pane 의 preview_start 가 쓴다
 index.html             # 유일한 HTML. 목록/글 화면 모두 여기서 라우팅
 css/
@@ -144,4 +145,7 @@ assets/                # 이미지, 폰트 등 (필요할 때 만든다)
 ## 배포
 
 GitHub Pages(루트 배포)를 전제로 한다. 모든 경로는 `./css/style.css`처럼 **상대 경로**로 쓴다. `/css/style.css` 같은 절대 경로는 `username.github.io/asdf-blog/` 아래에서 깨진다.
-배포 확인은 브라우저 강력 새로고침(`Ctrl+Shift+R`)으로 한다 — Pages 캐시가 10분이라 `curl`과 화면이 다를 수 있다.
+배포 주소: https://asdfdsign.github.io/asdf-blog/ (저장소 `asdfdsign/asdf-blog`, main 브랜치 루트, 공개).
+
+- **루트의 `.nojekyll` 을 지우지 않는다.** GitHub Pages 는 기본으로 Jekyll 을 돌리는데, Jekyll 은 프런트매터가 있는 `.md` 를 전부 `.html` 로 바꿔 버리고 원본 `.md` 를 내주지 않는다. 그러면 목록은 뜨는데 글마다 404 가 난다. `.nojekyll` 이 그걸 끈다.
+- 배포 확인은 브라우저 강력 새로고침(`Ctrl+Shift+R`)으로 한다 — Pages 캐시가 10분이라 `curl`과 화면이 다를 수 있다.

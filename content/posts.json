@@ -1,5 +1,17 @@
 [
   {
+    "slug": "daystudy-2",
+    "series": "Daystudy",
+    "part": 2,
+    "title": "git 프로젝트와 블로그 주소",
+    "date": "2026-09-16",
+    "tags": [
+      "study",
+      "git"
+    ],
+    "summary": "git init과 GitHub는 다른 것. Pages 주소는 저장소 이름이 정하고, 그래서 경로는 상대 경로여야 한다."
+  },
+  {
     "slug": "jininsa-daecheonmyeong",
     "title": "진인사대천명",
     "date": "2026-09-16",

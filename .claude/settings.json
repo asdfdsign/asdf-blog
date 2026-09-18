@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(npm install*)",
+      "Bash(npm i *)",
+      "Bash(npm ci*)",
+      "Bash(npm add*)",
+      "Bash(yarn add*)",
+      "Bash(pnpm add*)",
+      "Bash(bun add*)",
+      "Write(package.json)"
+    ]
+  }
+}

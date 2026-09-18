@@ -1,5 +1,14 @@
 [
   {
+    "slug": "claude-code-routines",
+    "title": "클로드 코드 루틴, 처음부터 이해하기",
+    "date": "2026-09-18",
+    "tags": [
+      "study"
+    ],
+    "summary": "정해진 시간에 클라우드에서 깨어나 쪽지대로 일하고 사라지는 클로드. 어디서 도는지, 크론과 UTC, 지시문 쓰는 요령까지."
+  },
+  {
     "slug": "daystudy-3",
     "series": "Daystudy",
     "part": 3,

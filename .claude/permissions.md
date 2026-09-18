@@ -16,7 +16,7 @@
 
 ---
 
-## 공통 — 어느 프로젝트든 같은 내 원칙 (27개)
+## 공통 — 어느 프로젝트든 같은 내 원칙 (26개)
 
 ### G-1. 폴더째 삭제 — 7개
 
@@ -26,30 +26,29 @@
 | 2 | `Bash(rm -fr*)` | 같은 명령, 옵션 순서만 다름 |
 | 3 | `Bash(rm -r -f*)` | 같은 명령, 옵션을 띄어 쓴 것 |
 | 4 | `Bash(rm -f -r*)` | 같은 명령, 옵션을 띄어 쓴 것 |
-| 5 | `Bash(*rmdir /s*)` | Windows cmd 의 폴더째 삭제 |
-| 6 | `Bash(*rd /s*)` | 같은 명령의 짧은 표기 |
+| 5 | `Bash(rmdir /s*)` | Windows cmd 의 폴더째 삭제 |
+| 6 | `Bash(rd /s*)` | 같은 명령의 짧은 표기 |
 | 7 | `Bash(*Remove-Item *-Recurse*)` | Windows PowerShell 의 폴더째 삭제 |
 
-휴지통을 거치지 않아 되돌릴 수 없다. 한 파일만 지우는 `rm 파일명` 은 막지 않는다. 5~7 은 앞에 `*` 가 붙어 있다 — `powershell -Command "…"` 나 `cmd /c …` 로 감싸서 실행해도 걸리게 하기 위해서다.
+휴지통을 거치지 않아 되돌릴 수 없다. 한 파일만 지우는 `rm 파일명` 은 막지 않는다. 7 만 앞에 `*` 가 있다 — `powershell -Command "…"` 로 감싼 호출도 잡기 위해서. 5·6 에는 붙이지 않는다: `rd /s` 는 짧아서 `record /sec` 같은 무관한 글자에도 걸린다.
 
-### G-2. git 기록 덮어쓰기 — 6개
+### G-2. git 기록 덮어쓰기 — 5개
 
 | # | 규칙 | 뜻 |
 | --- | --- | --- |
 | 8 | `Bash(git push --force*)` | GitHub 의 커밋을 내 것으로 갈아엎기 |
-| 9 | `Bash(git push -f *)` | 같은 명령의 짧은 표기 |
-| 10 | `Bash(git push --force-with-lease*)` | "안전한 force push" 라 불리지만 기록을 다시 쓰는 건 같음 |
-| 11 | `Bash(git reset --hard*)` | 커밋 안 한 변경을 전부 버리기 |
-| 12 | `Bash(git filter-branch*)` | 과거 커밋 전체를 고쳐 쓰기 |
-| 13 | `Bash(git push --mirror*)` | 원격을 내 로컬과 똑같이 만들기 (원격에만 있는 브랜치 삭제) |
+| 9 | `Bash(git push -f*)` | 같은 명령의 짧은 표기 (`-f` 단독도 잡힘) |
+| 10 | `Bash(git reset --hard*)` | 커밋 안 한 변경을 전부 버리기 |
+| 11 | `Bash(git filter-branch*)` | 과거 커밋 전체를 고쳐 쓰기 |
+| 12 | `Bash(git push --mirror*)` | 원격을 내 로컬과 똑같이 만들기 (원격에만 있는 브랜치 삭제) |
 
-git 의 가치는 "되돌릴 수 있다" 인데 이것들은 그 기록 자체를 지운다. 되돌려야 하면 `git revert`(기록을 남기며 되돌림), `git stash`(치워 두기), `git checkout -- 파일`(파일 하나 되돌리기) 를 쓴다.
+git 의 가치는 "되돌릴 수 있다" 인데 이것들은 그 기록 자체를 지운다. 되돌려야 하면 `git revert`(기록을 남기며 되돌림), `git stash`(치워 두기), `git checkout -- 파일`(파일 하나 되돌리기) 를 쓴다. `--force-with-lease` 는 막지 않는다 — 원격이 내가 마지막으로 본 상태일 때만 덮어쓰므로, 누가 먼저 푸시해 뒀으면 거부되는 안전한 쪽이다.
 
 ### G-3. 관리자 권한 — 1개
 
 | # | 규칙 | 뜻 |
 | --- | --- | --- |
-| 14 | `Bash(sudo*)` | 관리자 권한으로 실행 |
+| 13 | `Bash(sudo*)` | 관리자 권한으로 실행 |
 
 이게 되면 나머지 규칙을 전부 우회할 수 있다. Windows 에선 거의 안 나오지만 맥·리눅스·클라우드에서 같은 규칙이 필요하다.
 
@@ -57,9 +56,9 @@ git 의 가치는 "되돌릴 수 있다" 인데 이것들은 그 기록 자체�
 
 | # | 규칙 | 뜻 |
 | --- | --- | --- |
-| 15 | `Bash(chmod 777*)` | 누구나 읽고 쓰고 실행하게 |
-| 16 | `Bash(chmod -R 777*)` | 폴더 안까지 전부 |
-| 17 | `Bash(chmod a+rwx*)` | 같은 뜻의 다른 표기 |
+| 14 | `Bash(chmod 777*)` | 누구나 읽고 쓰고 실행하게 |
+| 15 | `Bash(chmod -R 777*)` | 폴더 안까지 전부 |
+| 16 | `Bash(chmod a+rwx*)` | 같은 뜻의 다른 표기 |
 
 권한 문제를 "문 다 열기" 로 대충 푸는 명령. 문제를 푸는 게 아니라 없애는 것.
 
@@ -67,14 +66,14 @@ git 의 가치는 "되돌릴 수 있다" 인데 이것들은 그 기록 자체�
 
 | # | 규칙 | 뜻 |
 | --- | --- | --- |
-| 18 | `Bash(curl * \| sh*)` | 받아서(`curl`) 바로 실행(`sh`) |
-| 19 | `Bash(curl * \| bash*)` | 위와 같음, 실행기가 `bash` |
-| 20 | `Bash(curl * \| zsh*)` | 위와 같음, 실행기가 `zsh` |
-| 21 | `Bash(wget * \| sh*)` | 받는 도구가 `wget` |
-| 22 | `Bash(wget * \| bash*)` | |
-| 23 | `Bash(wget * \| zsh*)` | |
-| 24 | `Bash(iwr * \| iex*)` | Windows PowerShell 판 (`iwr` 받기, `iex` 실행) |
-| 25 | `Bash(irm * \| iex*)` | Windows PowerShell 판 |
+| 17 | `Bash(curl * \| sh*)` | 받아서(`curl`) 바로 실행(`sh`) |
+| 18 | `Bash(curl * \| bash*)` | 위와 같음, 실행기가 `bash` |
+| 19 | `Bash(curl * \| zsh*)` | 위와 같음, 실행기가 `zsh` |
+| 20 | `Bash(wget * \| sh*)` | 받는 도구가 `wget` |
+| 21 | `Bash(wget * \| bash*)` | |
+| 22 | `Bash(wget * \| zsh*)` | |
+| 23 | `Bash(iwr * \| iex*)` | Windows PowerShell 판 (`iwr` 받기, `iex` 실행) |
+| 24 | `Bash(irm * \| iex*)` | Windows PowerShell 판 |
 
 설치 안내에 흔히 나오는 한 줄이지만 **읽어 보지도 않고 실행** 하는 것이다. 필요하면 먼저 파일로 받아 내용을 본 뒤 실행한다.
 
@@ -82,8 +81,8 @@ git 의 가치는 "되돌릴 수 있다" 인데 이것들은 그 기록 자체�
 
 | # | 규칙 | 뜻 |
 | --- | --- | --- |
-| 26 | `Edit(D:/Documents/Obsidian Vault/**)` | 볼트 안의 파일 고치기 |
-| 27 | `Write(D:/Documents/Obsidian Vault/**)` | 볼트 안에 파일 만들기 |
+| 25 | `Edit(D:/Documents/Obsidian Vault/**)` | 볼트 안의 파일 고치기 |
+| 26 | `Write(D:/Documents/Obsidian Vault/**)` | 볼트 안에 파일 만들기 |
 
 옵시디언 안의 글은 고치지 않는다. 읽기는 된다.
 

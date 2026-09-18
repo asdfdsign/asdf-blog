@@ -1,5 +1,17 @@
 [
   {
+    "slug": "daystudy-3",
+    "series": "Daystudy",
+    "part": 3,
+    "title": "클라우드 루틴과 GitHub 권한",
+    "date": "2026-09-18",
+    "tags": [
+      "study",
+      "git"
+    ],
+    "summary": "매일 자동으로 글을 올리려다 두 블로그에서 같은 자리에 막혔다. 권한은 세 겹, Authorize와 Install은 다른 것."
+  },
+  {
     "slug": "daystudy-2",
     "series": "Daystudy",
     "part": 2,

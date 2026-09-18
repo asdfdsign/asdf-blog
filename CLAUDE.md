@@ -133,7 +133,19 @@ assets/                # 이미지, 폰트 등 (필요할 때 만든다)
 - 형식은 1편(`content/posts/daystudy.md`)을 따른다: 도입 한 문단 → `##` 주제 2~4개 (비유 + 실제 코드 조각) → `## 오늘의 한 줄 정리` 불릿.
 - 파서가 지원하는 문법만 쓴다 (표·중첩 목록 금지).
 - 태그는 `study` + 내용에 맞는 하나.
-- 클라우드 루틴이 매일 19:00 KST 에 PR 로 올린다. 사람이 읽고 병합해야 블로그에 반영된다.
+- 클라우드 루틴 `asdf-blog Daystudy 매일 글쓰기`(`trig_019LU68vECuzPkPwcxFHLN7Y`)가 매일 19:00 KST(`0 10 * * *` UTC)에 PR 로 올린다. 사람이 읽고 병합해야 블로그에 반영된다. 글감이 없는 날도 PushNotification 은 온다.
+- 루틴이 막히면 아래 「클라우드 루틴 체크리스트」 순서로 본다. 자세한 사연은 Daystudy #3.
+
+### 클라우드 루틴 체크리스트
+
+`/schedule` 로 만드는 루틴은 Anthropic 클라우드에서 매번 새 컴퓨터로 시작한다. 내 PC 를 못 보고, 재료는 GitHub 저장소뿐이다. 두 블로그에서 같은 자리에 막혔으니 순서대로 확인한다.
+
+1. **저장소가 GitHub 에 있고 공개인가.** 비공개면 루틴 생성부터 403 (`You don't have access to a repository this routine uses`). 공개로 바꾸면 생성은 통과한다.
+2. **클로드 계정에 GitHub 이 연결됐는가.** 생성 시 401 (`Connect your GitHub account`)이면 여기. claude.ai/code **웹**(데스크톱 앱 아님)에서 `+ 레포 선택...` 을 눌러 연결한다. 안내 링크는 앱이 가로채니 크롬 주소창에 직접 붙여넣는다.
+3. **Claude GitHub 앱이 이 저장소에 설치됐는가.** 실행은 되는데 푸시·PR 에서 403 (`Resource not accessible by integration`)이면 여기. Authorize(계정)와 Install(저장소)은 다르다. 공개 저장소는 읽기가 공짜라 쓰기 실패가 늦게 드러난다. → `https://github.com/settings/installations` → Claude → Configure → 저장소 추가. 없으면 `https://github.com/apps/claude/installations/new`.
+4. **만들자마자 커넥터를 뗀다.** Gmail·Drive·Calendar·Notion 등이 자동으로 붙는다. `RemoteTrigger update` 에 `clear_mcp_connections: true`.
+5. **어떤 경우에도 알림이 오는가.** 썼다 / 글감 없다 / 이미 있다 / 실패 — 네 경우 모두 PushNotification. 조용히 끝나는 루틴은 죽은 줄도 모른다.
+6. 확인은 `RemoteTrigger run` 으로 한 번 돌려 `get_run_log` 를 본다. 글감이 없으면 (B) 로 끝나므로 쓰기 권한은 검증되지 않는다 — 쓰기까지 보려면 마지막 Daystudy 이후 커밋이 하나 있어야 한다.
 
 ### 옵시디언에서 가져오기
 

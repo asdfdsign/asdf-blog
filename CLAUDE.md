@@ -21,6 +21,8 @@
 
 ```
 CLAUDE.md              # 이 파일
+.claude/settings.json  # 이 프로젝트의 차단 규칙 (npm 설치 등). 목록과 설명은 .claude/permissions.md
+.claude/permissions.md # 차단 규칙 전체 목록 — 공통(~/.claude/settings.json)과 프로젝트를 번호로. 규칙을 넣고 빼면 같이 고친다
 .nojekyll              # GitHub Pages 의 Jekyll 을 끈다. 없으면 .md 가 404 (배포 절 참고)
 .claude/launch.json    # 로컬 서버 설정 (python -m http.server 8000). Browser pane 의 preview_start 가 쓴다
 index.html             # 유일한 HTML. 목록/글 화면 모두 여기서 라우팅

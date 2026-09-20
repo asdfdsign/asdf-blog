@@ -1,5 +1,17 @@
 [
   {
+    "slug": "daystudy-4",
+    "series": "Daystudy",
+    "part": 4,
+    "title": "차단 규칙은 뜻을 모른다",
+    "date": "2026-09-20",
+    "tags": [
+      "study",
+      "git"
+    ],
+    "summary": "차단 규칙과 샌드박스는 다른 안전장치다. 규칙은 글자 모양만 봐서 좁으면 놓치고 넓으면 오탐한다."
+  },
+  {
     "slug": "claude-code-deny-rules",
     "title": "클로드 코드 차단 규칙 — 모드와 상관없이 막는 선",
     "date": "2026-09-18",

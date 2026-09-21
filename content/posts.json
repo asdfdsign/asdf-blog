@@ -1,87 +1,93 @@
 [
   {
     "slug": "claude-code-deny-rules",
+    "category": "daystudy",
+    "part": 7,
     "title": "클로드 코드 차단 규칙 — 모드와 상관없이 막는 선",
     "date": "2026-09-18",
     "tags": [
-      "study"
+      "claude-code"
     ],
     "summary": "뜻도 모르고 넣었던 33개를 뜯어 공통 26개와 프로젝트 8개로 다시 나눴다. deny는 항상 이기고, 시험은 임시 파일로."
   },
   {
     "slug": "claude-code-permission-modes",
+    "category": "daystudy",
+    "part": 8,
     "title": "클로드 코드 권한 모드 — 얼마나 묻지 않고 해도 되는가",
     "date": "2026-09-18",
     "tags": [
-      "study"
+      "claude-code"
     ],
     "summary": "자동·수동·편집 자동 수락·계획·권한 무시 — 앱 목록 순서대로. 편집 자동 수락과 자동을 가르는 건 명령 실행, 자동 모드에도 안전장치는 두 겹."
   },
   {
     "slug": "claude-code-routines",
+    "category": "daystudy",
+    "part": 9,
     "title": "클로드 코드 루틴, 처음부터 이해하기",
     "date": "2026-09-18",
     "tags": [
-      "study"
+      "claude-code"
     ],
     "summary": "정해진 시간에 클라우드에서 깨어나 쪽지대로 일하고 사라지는 클로드. 어디서 도는지, 크론과 UTC, 지시문 쓰는 요령까지."
   },
   {
     "slug": "daystudy-3",
-    "series": "Daystudy",
-    "part": 3,
+    "category": "daystudy",
+    "part": 6,
     "title": "클라우드 루틴과 GitHub 권한",
     "date": "2026-09-18",
     "tags": [
-      "study",
       "git"
     ],
     "summary": "매일 자동으로 글을 올리려다 두 블로그에서 같은 자리에 막혔다. 권한은 세 겹, Authorize와 Install은 다른 것."
   },
   {
     "slug": "daystudy-2",
-    "series": "Daystudy",
-    "part": 2,
+    "category": "daystudy",
+    "part": 5,
     "title": "git 프로젝트와 블로그 주소",
     "date": "2026-09-16",
     "tags": [
-      "study",
       "git"
     ],
     "summary": "git init과 GitHub는 다른 것. Pages 주소는 저장소 이름이 정하고, 그래서 경로는 상대 경로여야 한다."
   },
   {
     "slug": "jininsa-daecheonmyeong",
+    "category": "essay",
     "title": "진인사대천명",
     "date": "2026-09-16",
-    "tags": [
-      "essay"
-    ],
+    "tags": [],
     "summary": "최선을 다하고 결과는 하늘에 맡긴다. 던져진 존재에서 자신을 던지는 존재로 — 마음에 남은 문장들을 모은 단상."
   },
   {
     "slug": "daystudy",
-    "series": "Daystudy",
-    "part": 1,
+    "category": "daystudy",
+    "part": 4,
     "title": "HTML·CSS·JS의 역할",
     "date": "2026-09-16",
     "tags": [
-      "study",
       "web"
     ],
     "summary": "HTML·CSS·JS의 역할, 마크다운과 파서, 실시간 변환의 의미, 프레임워크 유무의 차이를 제 말로 정리한 학습 기록."
   },
   {
     "slug": "hello-world",
+    "category": "daystudy",
+    "part": 3,
     "title": "두 번째 블로그를 시작하며",
     "date": "2026-09-15",
     "tags": [
-      "study"
+      "web"
     ],
     "summary": "빌드 없이, 프레임워크 없이. 브라우저가 마크다운을 직접 읽는 블로그를 만듭니다."
   },
   {
     "slug": "markdown-guide",
+    "category": "daystudy",
+    "part": 2,
     "title": "이 블로그가 지원하는 마크다운 문법",
     "date": "2026-09-14",
     "tags": [
@@ -91,10 +97,11 @@
   },
   {
     "slug": "why-no-framework",
+    "category": "daystudy",
+    "part": 1,
     "title": "프레임워크 없이 만드는 이유",
     "date": "2026-09-12",
     "tags": [
-      "study",
       "javascript"
     ],
     "summary": "React도 번들러도 없이 시작하면 브라우저가 실제로 무엇을 하는지 보인다."

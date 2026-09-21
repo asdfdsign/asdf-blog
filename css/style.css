@@ -223,6 +223,16 @@ main { padding-block: 2rem 4rem; }
 
 .post-list__empty { color: var(--text-muted); padding-block: 2rem; }
 
+/* 주제 바 — Daystudy 안의 하위 카테고리. 카테고리 바 바로 아래, 한 단계 작게 */
+.topics { margin-top: -0.75rem; }
+.cat--sub {
+  min-height: 2rem;
+  padding: 0 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+.cat--sub[aria-current] { background: var(--accent); border-color: var(--accent); color: var(--accent-contrast); }
+
 time { color: var(--text-muted); font-size: 0.8125rem; font-variant-numeric: tabular-nums; }
 
 /* 시리즈 라벨 — 제목 위 작은 빨간 글씨 */

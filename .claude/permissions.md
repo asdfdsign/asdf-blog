@@ -131,3 +131,17 @@ git 의 가치는 "되돌릴 수 있다" 인데 이것들은 그 기록 자체�
 **넣은 뒤 확인** — 실패해도 안전한 명령으로 걸리는지 본다. 없는 폴더에 `rm -rf`, 로컬=원격일 때 `git push --force`, `--dry-run` 붙인 `npm install`. 진짜 파일·진짜 폴더로 시험하지 않는다.
 
 **이 문서 갱신** — 규칙을 넣고 빼면 여기도 같이 고친다. 이 문서와 두 설정 파일이 어긋나면 이 문서가 틀린 것이다.
+
+---
+
+## 허용 규칙 (allow) — 이 PC 에서만
+
+파일: `.claude/settings.local.json` (git 에 안 올라감). 수동 모드에서 매번 묻지 않게 할 명령. **deny 가 allow 보다 항상 이기므로** 여기 넣어도 위험한 형태는 막힌다.
+
+| 허용 | 뜻 |
+| --- | --- |
+| `git status/log/diff/show/branch/ls-remote/ls-files` | 읽기 |
+| `git add / commit / stash / checkout / switch` | 로컬 변경 |
+| `git push`, `git push origin *`, `git pull`, `git fetch` | 원격 |
+
+**`git *` 로 통째로 허용하지 않는다.** `git -C 경로 push --force` 처럼 `git` 과 하위 명령 사이에 전역 옵션이 끼면 deny 패턴(`git push --force*`)이 못 잡는데, `git *` 허용은 그걸 통과시킨다. 하위 명령을 하나씩 나열하면 그런 형태는 허용 밖으로 떨어져 **분류기가 본다** — 실제로 `[Git Destructive]` 로 막혔다. 허용을 넓게 주면 분류기라는 한 겹을 스스로 걷어내는 셈이다.

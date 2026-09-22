@@ -200,6 +200,7 @@ main { padding-block: 2rem 4rem; }
 /* 미니 웹앱 카드 — 히어로 아래. 설명 + 라이브 iframe. 넓어지면 좌우 2열 */
 .apps { margin-bottom: 2.5rem; }
 .apps__title { margin-bottom: 0.75rem; }
+.app-card + .app-card { margin-top: 1rem; }
 .app-card {
   display: grid;
   border: 1px solid var(--border);

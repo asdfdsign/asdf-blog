@@ -1,0 +1,465 @@
+/* ==========================================================================
+   포모도로 타이머 — 단일 스타일시트
+   색은 전부 아래 변수 블록에만 있다. 컴포넌트는 --session / --session-soft 만 참조하고,
+   .timer[data-session] 이 그 둘을 집중(--accent) / 휴식(--rest) 으로 바꾼다.
+   팔레트는 블로그(css/style.css)와 같고 --rest / --rest-soft 만 이 앱이 더한 것.
+   ========================================================================== */
+
+:root {
+  color-scheme: light;
+
+  --bg: #fbfaf9;
+  --bg-elevated: #f2efec;
+  --text: #1c1917;
+  --text-muted: #6b6461;
+  --border: #e4dfdb;
+
+  --accent: #c8202a;
+  --accent-hover: #a5141d;
+  --accent-soft: #fbe9ea;
+  --accent-contrast: #ffffff;
+
+  --rest: #2b6f9e;
+  --rest-soft: #e6f0f7;
+
+  /* 기본은 집중 색. .timer[data-session] 이 덮어쓴다 */
+  --session: var(--accent);
+  --session-soft: var(--accent-soft);
+
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
+    system-ui, "Segoe UI", Roboto, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+
+  --radius: 10px;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --dur: 150ms;
+  --dur-session: 400ms; /* 세션 색 전환 */
+  --gutter: 16px;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #141214;
+  --bg-elevated: #1e1b1d;
+  --text: #ece7e4;
+  --text-muted: #a39a96;
+  --border: #2c2729;
+
+  --accent: #ff6b6e;
+  --accent-hover: #ff8a8c;
+  --accent-soft: #3a1e20;
+  --accent-contrast: #141214;
+
+  --rest: #6fb3e0;
+  --rest-soft: #1a2a36;
+}
+
+/* --------------------------------------------------------------------------
+   리셋 · 베이스
+   -------------------------------------------------------------------------- */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  touch-action: manipulation; /* 더블탭 확대 지연 제거 */
+}
+
+/* 포커스 링은 세션 색 — 헤더처럼 .timer 밖에서는 :root 기본값(집중 색)이 쓰인다 */
+:focus-visible {
+  outline: 2px solid var(--session);
+  outline-offset: 2px;
+}
+
+/* 스크린리더 전용 라이브 영역 */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* --------------------------------------------------------------------------
+   헤더 — 스도쿠와 같은 구조
+   -------------------------------------------------------------------------- */
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 0.25rem var(--gutter);
+  min-height: 56px;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-left: -0.5rem;
+  padding: 0 0.5rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.9375rem;
+  border-radius: 999px;
+  transition: color var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+.back-link:hover { color: var(--accent); transform: translateX(-2px); }
+
+.app-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.theme-toggle {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-right: -0.5rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  transition: color var(--dur) var(--ease), background-color var(--dur) var(--ease);
+}
+.theme-toggle:hover { color: var(--accent); background: var(--accent-soft); }
+.theme-toggle .icon { grid-area: 1 / 1; transition: opacity var(--dur) var(--ease), transform 300ms var(--ease); }
+.theme-toggle .icon--moon { opacity: 0; transform: rotate(-40deg) scale(0.7); }
+[data-theme="dark"] .theme-toggle .icon--sun { opacity: 0; transform: rotate(40deg) scale(0.7); }
+[data-theme="dark"] .theme-toggle .icon--moon { opacity: 1; transform: none; }
+
+/* --------------------------------------------------------------------------
+   레이아웃 — 한 열, 최대 420px. 2열은 하지 않는다
+   -------------------------------------------------------------------------- */
+
+.timer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.875rem;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 0.25rem var(--gutter) 1.5rem;
+}
+
+/* 세션 색 — 컴포넌트는 이 두 변수만 본다 */
+.timer[data-session="focus"] { --session: var(--accent); --session-soft: var(--accent-soft); }
+.timer[data-session="short"],
+.timer[data-session="long"] { --session: var(--rest); --session-soft: var(--rest-soft); }
+
+/* --------------------------------------------------------------------------
+   세션 줄 — 라벨 pill · 소리 토글
+   -------------------------------------------------------------------------- */
+
+.session-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 44px;
+}
+
+.session-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 36px;
+  padding: 0 0.875rem 0 0.625rem;
+  border-radius: 999px;
+  background: var(--session-soft);
+  color: var(--session);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  transition: background-color var(--dur-session) var(--ease), color var(--dur-session) var(--ease);
+}
+.session-pill .icon { flex: none; }
+/* 세션 아이콘은 둘 다 두고 하나만 보인다 — 색을 못 봐도 모양·문구로 구분된다 */
+.timer[data-session="focus"] .icon--rest { display: none; }
+.timer[data-session="short"] .icon--focus,
+.timer[data-session="long"] .icon--focus { display: none; }
+
+/* 아이콘 버튼 공통(소리·리셋·건너뛰기) */
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+.icon-btn:hover { color: var(--text); border-color: var(--text-muted); transform: translateY(-1px); }
+.icon-btn:active { transform: none; }
+.icon-btn .icon { grid-area: 1 / 1; }
+
+.sound-toggle { border-color: transparent; background: transparent; }
+.sound-toggle .icon--sound-off { display: none; }
+.sound-toggle[aria-pressed="false"] .icon--sound-on { display: none; }
+.sound-toggle[aria-pressed="false"] .icon--sound-off { display: block; }
+
+/* --------------------------------------------------------------------------
+   원 — SVG 원 두 개 + 숫자. 4절
+   -------------------------------------------------------------------------- */
+
+.ring-wrap {
+  position: relative;
+  width: min(100%, 360px, calc(100dvh - 260px));
+  aspect-ratio: 1;
+  container-type: inline-size; /* 숫자 크기를 원 크기에 맞춘다(cqi) */
+}
+
+.ring {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.ring__track {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 6;
+  transition: stroke var(--dur) var(--ease);
+}
+
+/* pathLength=100 → dasharray 100, dashoffset -(100 - 남은 %). 12시에서 시작해 시계 방향으로 빈다 */
+.ring__progress {
+  fill: none;
+  stroke: var(--session);
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 0;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+  transition: stroke-dashoffset 250ms linear, stroke var(--dur-session) var(--ease);
+}
+.digits {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--text);
+  font-size: clamp(2rem, 22cqi, 4.5rem);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  transition: color var(--dur-session) var(--ease);
+  pointer-events: none; /* 원 자체를 눌러 시작되지 않게(버튼이 바로 아래 있다) */
+}
+
+/* 마지막 10초 — 숫자는 세션 색, 원은 1초 펄스 */
+@keyframes ring-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+.timer.is-ending .digits { color: var(--session); }
+.timer.is-ending .ring__progress { animation: ring-pulse 1s ease-in-out infinite; }
+
+/* 길이 0 대시의 둥근 캡이 점으로 남는 걸 막는다.
+   is-ending 펄스(.timer.is-ending .ring__progress) 보다 뒤에, 같은 특이도 이상으로 두어야 opacity 0 이 이긴다 */
+.ring__progress.is-empty,
+.timer.is-ending .ring__progress.is-empty { opacity: 0; animation: none; }
+
+/* --------------------------------------------------------------------------
+   버튼 줄 — 리셋 · 주 버튼 · 건너뛰기
+   -------------------------------------------------------------------------- */
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.btn-main {
+  flex: 1 1 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-width: 140px;
+  min-height: 56px;
+  padding: 0 1.25rem;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--session);
+  color: var(--accent-contrast);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  transition: background-color var(--dur-session) var(--ease), transform var(--dur) var(--ease), opacity var(--dur) var(--ease);
+}
+.btn-main:hover { opacity: 0.92; transform: translateY(-1px); }
+.btn-main:active { transform: none; opacity: 1; }
+.btn-main .icon--pause { display: none; }
+.timer[data-status="running"] .btn-main .icon--play { display: none; }
+.timer[data-status="running"] .btn-main .icon--pause { display: block; }
+
+/* --------------------------------------------------------------------------
+   완료 점 — interval 개, 채운 수 = cyclePos
+   -------------------------------------------------------------------------- */
+
+.dots {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 20px;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+.dots__list {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: background-color var(--dur-session) var(--ease);
+}
+.dot.is-filled { background: var(--session); }
+.dots__sep::before { content: "·"; }
+
+/* --------------------------------------------------------------------------
+   설정 — 접이식
+   -------------------------------------------------------------------------- */
+
+.settings {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+}
+.settings summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 1rem;
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.settings summary::-webkit-details-marker { display: none; }
+.settings summary::before {
+  content: "";
+  width: 0.4em;
+  height: 0.4em;
+  margin-right: 0.625rem;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform var(--dur) var(--ease);
+}
+.settings[open] summary::before { transform: rotate(45deg); }
+.settings summary:focus-visible { outline-offset: -2px; }
+
+.settings__body {
+  padding: 0.25rem 1rem 1rem;
+  border-top: 1px solid var(--border);
+}
+.settings__grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-top: 0.75rem;
+}
+.settings__grid label { font-size: 0.9375rem; }
+.settings__grid input {
+  width: 5.5rem;
+  min-height: 44px;
+  padding: 0 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.settings__hint {
+  margin: 0.75rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+}
+.settings__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+.btn-text {
+  min-height: 44px;
+  padding: 0 0.875rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.9375rem;
+  transition: border-color var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.btn-text:hover { border-color: var(--text-muted); }
+
+/* --------------------------------------------------------------------------
+   임베드(iframe) — header·설정 숨김, 여백 8px, 원은 300×480 카드에 맞춰 280px
+   -------------------------------------------------------------------------- */
+
+[data-embed] { --gutter: 8px; }
+[data-embed] .app-header,
+[data-embed] .settings { display: none; }
+[data-embed] .timer { gap: 0.5rem; padding-top: var(--gutter); padding-bottom: var(--gutter); }
+[data-embed] .ring-wrap { width: min(100%, 320px, calc(100dvh - 200px)); }
+
+/* --------------------------------------------------------------------------
+   모션 줄이기 — 호·색 transition 과 펄스를 끈다. 틱은 그대로라 초 단위로 계단식으로 준다
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+  .ring__progress { transition: none; animation: none; }
+  .timer.is-ending .ring__progress { animation: none; }
+  .btn-main:hover, .icon-btn:hover, .back-link:hover { transform: none; }
+}

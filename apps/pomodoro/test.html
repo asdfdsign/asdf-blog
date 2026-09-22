@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>timer.js 테스트</title>
+  <meta name="color-scheme" content="light dark">
+  <script src="./theme.js"></script>
+  <style>
+    /* 테스트 페이지 전용. 색은 앱 팔레트 변수만 쓴다 */
+    :root { --bg: #fbfaf9; --bg-elevated: #f2efec; --text: #1c1917; --text-muted: #6b6461; --border: #e4dfdb; --accent: #c8202a; --ok: #2f7d4f; --warn: #a1620a; }
+    [data-theme="dark"] { --bg: #141214; --bg-elevated: #1e1b1d; --text: #ece7e4; --text-muted: #a39a96; --border: #2c2729; --accent: #ff6b6e; --ok: #6cc08b; --warn: #e0a24a; }
+    body { margin: 0; padding: 1rem; background: var(--bg); color: var(--text); font-family: "Pretendard Variable", Pretendard, system-ui, sans-serif; font-size: 0.9375rem; line-height: 1.5; }
+    h1 { font-size: 1.25rem; margin: 0 0 0.5rem; }
+    .summary { padding: 0.75rem 1rem; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-elevated); margin-bottom: 1rem; }
+    .summary strong { font-size: 1.125rem; }
+    .summary.fail strong { color: var(--accent); }
+    .summary.pass strong { color: var(--ok); }
+    .wrap { overflow-x: auto; }
+    table { border-collapse: collapse; width: 100%; min-width: 640px; font-variant-numeric: tabular-nums; }
+    th, td { text-align: left; padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: var(--text-muted); font-weight: 600; }
+    td.mono { font-family: ui-monospace, Consolas, monospace; font-size: 0.85em; word-break: break-all; }
+    tr.pass td.result { color: var(--ok); font-weight: 600; }
+    tr.fail td.result { color: var(--accent); font-weight: 600; }
+    tr.warn td.result { color: var(--warn); font-weight: 600; }
+    tr.group td { background: var(--bg-elevated); color: var(--text-muted); font-weight: 600; }
+  </style>
+</head>
+<body>
+  <h1>timer.js 테스트</h1>
+  <div class="summary" id="summary">실행 중…</div>
+  <div class="wrap">
+    <table>
+      <thead><tr><th>이름</th><th>기대</th><th>실제</th><th>통과</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+
+  <script src="./timer.js"></script>
+  <script>
+  (function () {
+    'use strict';
+    var P = window.Pomodoro;
+    var rows = document.getElementById('rows');
+    var total = 0, passed = 0, warned = 0;
+
+    // 가짜 시계. 실제 시각은 어디에도 쓰지 않는다
+    var T0 = 1700000000000;
+    var MIN = 60000;
+
+    function fmt(v) {
+      if (Array.isArray(v)) return '[' + v.join(',') + ']';
+      if (typeof v === 'object' && v !== null) return JSON.stringify(v);
+      return String(v);
+    }
+
+    // 결과 한 줄. status: 'pass' | 'fail' | 'warn' (warn 은 통과로 센다)
+    function row(name, expected, actual, status) {
+      total++;
+      if (status !== 'fail') passed++;
+      if (status === 'warn') warned++;
+      var tr = document.createElement('tr');
+      tr.className = status;
+      [name, fmt(expected), fmt(actual), status === 'pass' ? '통과' : status === 'warn' ? '경고' : '실패'].forEach(function (text, i) {
+        var td = document.createElement('td');
+        if (i === 1 || i === 2) td.className = 'mono';
+        if (i === 3) td.className = 'result';
+        td.textContent = text;
+        tr.appendChild(td);
+      });
+      rows.appendChild(tr);
+    }
+    function eq(name, expected, actual) { row(name, expected, actual, fmt(expected) === fmt(actual) ? 'pass' : 'fail'); }
+    function ok(name, cond, detail) { row(name, 'true', detail == null ? cond : detail, cond ? 'pass' : 'fail'); }
+    function group(title) {
+      var tr = document.createElement('tr'); tr.className = 'group';
+      var td = document.createElement('td'); td.colSpan = 4; td.textContent = title;
+      tr.appendChild(td); rows.appendChild(tr);
+    }
+    // 전이 함수가 입력을 건드리지 않는지 — 호출 전후 JSON 이 같아야 한다
+    function frozen(name, input, fn) {
+      var before = JSON.stringify(input);
+      fn(input);
+      eq(name + ' — 입력 불변', before, JSON.stringify(input));
+    }
+
+    var D = P.normalizeSettings({}); // 기본 설정
+
+    /* 1. normalizeSettings */
+    group('1. normalizeSettings');
+    eq('{} → 기본값', P.DEFAULTS, P.normalizeSettings({}));
+    eq("{focus: '3.7'} → 3", 3, P.normalizeSettings({ focus: '3.7' }).focus);
+    eq('{focus: 120} → 90', 90, P.normalizeSettings({ focus: 120 }).focus);
+    eq('{focus: 0} → 1', 1, P.normalizeSettings({ focus: 0 }).focus);
+    eq('{interval: 9} → 8', 8, P.normalizeSettings({ interval: 9 }).interval);
+    eq('null → 기본값', P.DEFAULTS, P.normalizeSettings(null));
+    eq("'abc'(문자열) → 기본값", P.DEFAULTS, P.normalizeSettings('abc'));
+    eq("{sound: 'no'} → true 유지", true, P.normalizeSettings({ sound: 'no' }).sound);
+    eq('{sound: false} → false', false, P.normalizeSettings({ sound: false }).sound);
+    eq("{short: '', long: NaN} → 기본값 5·15", [5, 15], (function (s) { return [s.short, s.long]; })(P.normalizeSettings({ short: '', long: NaN })));
+
+    /* 2. createState */
+    group('2. createState');
+    var s0 = P.createState(D, T0);
+    eq('session', 'focus', s0.session);
+    eq('status', 'idle', s0.status);
+    eq('durationMs', 1500000, s0.durationMs);
+    eq('completed / cyclePos', [0, 0], [s0.completed, s0.cyclePos]);
+    eq('date === dateKey(T0)', P.dateKey(T0), s0.date);
+    eq('endAt / remainingMs null', [null, null], [s0.endAt, s0.remainingMs]);
+    ok('dateKey 형식 YYYY-MM-DD', /^\d{4}-\d{2}-\d{2}$/.test(s0.date), s0.date);
+
+    /* 3. start */
+    group('3. start');
+    var r0 = P.start(s0, T0);
+    eq('status running', 'running', r0.status);
+    eq('endAt === T0 + 1500000', T0 + 1500000, r0.endAt);
+    eq('remaining(+60s) === 1440000', 1440000, P.remaining(r0, T0 + MIN));
+    eq('fraction(+60s) === 0.96', 0.96, P.fraction(r0, T0 + MIN));
+    eq('remaining(idle) === durationMs', 1500000, P.remaining(s0, T0 + 999999));
+    eq('fraction(idle) === 1', 1, P.fraction(s0, T0));
+    ok('start(running) 은 그대로', P.start(r0, T0 + 5000) === r0);
+
+    /* 4. pause / 계속 */
+    group('4. pause → 계속');
+    var p0 = P.pause(r0, T0 + MIN);
+    eq('status paused', 'paused', p0.status);
+    eq('remainingMs 1440000, endAt null', [1440000, null], [p0.remainingMs, p0.endAt]);
+    eq('30초 뒤 remaining 그대로', 1440000, P.remaining(p0, T0 + MIN + 30000));
+    var r1 = P.start(p0, T0 + 90000);
+    eq('start(paused, T0+90s) → endAt === T0 + 90000 + 1440000', T0 + 90000 + 1440000, r1.endAt);
+    eq('remainingMs 는 다시 null', null, r1.remainingMs);
+    ok('pause(idle) 은 그대로', P.pause(s0, T0) === s0);
+    eq('toggle(running) → paused', 'paused', P.toggle(r0, T0).status);
+    eq('toggle(idle) → running', 'running', P.toggle(s0, T0).status);
+    eq('toggle(paused) → running', 'running', P.toggle(p0, T0).status);
+
+    /* 5. isDone */
+    group('5. isDone / remaining 하한');
+    eq('endAt − 1 → false', false, P.isDone(r0, r0.endAt - 1));
+    eq('endAt → true', true, P.isDone(r0, r0.endAt));
+    eq('endAt + 5000 → true', true, P.isDone(r0, r0.endAt + 5000));
+    eq('remaining(running, endAt + 5000) === 0', 0, P.remaining(r0, r0.endAt + 5000));
+    eq('fraction(running, endAt + 5000) === 0', 0, P.fraction(r0, r0.endAt + 5000));
+    eq('isDone(idle) false', false, P.isDone(s0, T0));
+    eq('isDone(paused) false', false, P.isDone(p0, T0 + 999999999));
+
+    /* 6. 전이 시나리오 interval 4 */
+    group('6. 전이 시나리오 (interval 4)');
+    function runFocusCycle(settings, times) {
+      var st = P.createState(settings, T0), t = T0, log = [];
+      for (var i = 0; i < times; i++) {
+        // 집중 시작 → 완료
+        st = P.start(st, t); t = st.endAt;
+        st = P.complete(st, settings, t);
+        log.push({ after: 'focus#' + (i + 1), session: st.session, cyclePos: st.cyclePos, completed: st.completed, status: st.status });
+        // 휴식 시작 → 완료
+        st = P.start(st, t); t = st.endAt;
+        st = P.complete(st, settings, t);
+        log.push({ after: 'rest#' + (i + 1), session: st.session, cyclePos: st.cyclePos, completed: st.completed });
+      }
+      return { state: st, log: log };
+    }
+    var c4 = runFocusCycle(D, 4);
+    eq('1회 완료 → short, cyclePos 1, completed 1, idle', ['short', 1, 1, 'idle'], [c4.log[0].session, c4.log[0].cyclePos, c4.log[0].completed, c4.log[0].status]);
+    eq('short 완료 → focus, cyclePos 1', ['focus', 1], [c4.log[1].session, c4.log[1].cyclePos]);
+    eq('2회 완료 → short, cyclePos 2', ['short', 2], [c4.log[2].session, c4.log[2].cyclePos]);
+    eq('3회 완료 → short, cyclePos 3', ['short', 3], [c4.log[4].session, c4.log[4].cyclePos]);
+    eq('4회 완료 → long, cyclePos 4, completed 4', ['long', 4, 4], [c4.log[6].session, c4.log[6].cyclePos, c4.log[6].completed]);
+    eq('long 완료 → focus, cyclePos 0, completed 4', ['focus', 0, 4], [c4.log[7].session, c4.log[7].cyclePos, c4.log[7].completed]);
+    eq('완료 뒤 durationMs 는 설정값(short 5분)', 300000, (function () { var st = P.complete(P.start(P.createState(D, T0), T0), D, T0 + 1500000); return st.durationMs; })());
+    eq('long 진입 durationMs 15분', 900000, (function () { var st = P.createState(D, T0); st = P.complete(P.start({ v: 1, session: 'focus', status: 'idle', durationMs: 1500000, endAt: null, remainingMs: null, completed: 3, cyclePos: 3, date: st.date }, T0), D, T0 + 1500000); return st.durationMs; })());
+    eq('nextSession focus cyclePos 3 / interval 4 → long', 'long', P.nextSession({ session: 'focus', cyclePos: 3 }, { interval: 4 }));
+    eq('nextSession focus cyclePos 2 / interval 4 → short', 'short', P.nextSession({ session: 'focus', cyclePos: 2 }, { interval: 4 }));
+    eq('nextSession short → focus', 'focus', P.nextSession({ session: 'short', cyclePos: 2 }, { interval: 4 }));
+    eq('nextSession long → focus', 'focus', P.nextSession({ session: 'long', cyclePos: 4 }, { interval: 4 }));
+
+    /* 7. interval 2 */
+    group('7. 전이 시나리오 (interval 2)');
+    var S2 = P.normalizeSettings({ interval: 2 });
+    var c2 = runFocusCycle(S2, 2);
+    eq('1회 완료 → short', 'short', c2.log[0].session);
+    eq('2회 완료 → long, cyclePos 2', ['long', 2], [c2.log[2].session, c2.log[2].cyclePos]);
+    eq('long 완료 → focus, cyclePos 0, completed 2', ['focus', 0, 2], [c2.log[3].session, c2.log[3].cyclePos, c2.log[3].completed]);
+
+    /* 8. skip */
+    group('8. skip');
+    var mid = { v: 1, session: 'focus', status: 'running', durationMs: 1500000, endAt: T0 + 1500000, remainingMs: null, completed: 2, cyclePos: 2, date: P.dateKey(T0) };
+    var sk = P.skip(mid, D, T0 + 1000);
+    eq('skip(focus running) → short, idle', ['short', 'idle'], [sk.session, sk.status]);
+    eq('completed·cyclePos 불변', [2, 2], [sk.completed, sk.cyclePos]);
+    eq('endAt null, durationMs 5분', [null, 300000], [sk.endAt, sk.durationMs]);
+    var longIdle = { v: 1, session: 'long', status: 'idle', durationMs: 900000, endAt: null, remainingMs: null, completed: 4, cyclePos: 4, date: P.dateKey(T0) };
+    var skL = P.skip(longIdle, D, T0);
+    eq('skip(long) → focus, cyclePos 0, completed 4', ['focus', 0, 4], [skL.session, skL.cyclePos, skL.completed]);
+    var skI = P.skip(s0, D, T0);
+    eq('skip(idle focus) 도 동작 → short', 'short', skI.session);
+    var skP = P.skip(p0, D, T0);
+    eq('skip(paused) → short, idle', ['short', 'idle'], [skP.session, skP.status]);
+    eq('skip(focus, cyclePos 3) → long', 'long', P.skip({ v: 1, session: 'focus', status: 'idle', durationMs: 1500000, endAt: null, remainingMs: null, completed: 3, cyclePos: 3, date: '' }, D, T0).session);
+
+    /* 9. complete 가 아닌 상태 */
+    group('9. complete — running 이 아니면 그대로');
+    ok('complete(idle) 참조 동일', P.complete(s0, D, T0) === s0);
+    ok('complete(paused) 참조 동일', P.complete(p0, D, T0 + 999999999) === p0);
+    eq('complete(idle) deepEqual', JSON.stringify(s0), JSON.stringify(P.complete(s0, D, T0)));
+
+    /* 10. reset */
+    group('10. reset');
+    var rs = P.reset(mid, D, T0 + 5000);
+    eq('reset(running) → idle', 'idle', rs.status);
+    eq('endAt / remainingMs null', [null, null], [rs.endAt, rs.remainingMs]);
+    eq('durationMs 가 settings 값', 1500000, rs.durationMs);
+    eq('세션·완료 수 불변', ['focus', 2, 2], [rs.session, rs.completed, rs.cyclePos]);
+    var S30 = P.normalizeSettings({ focus: 30 });
+    eq('reset(running, focus 30 설정) → durationMs 1800000', 1800000, P.reset(mid, S30, T0).durationMs);
+    eq('reset(paused) → idle, 가득', ['idle', 1500000], [P.reset(p0, D, T0).status, P.remaining(P.reset(p0, D, T0), T0)]);
+
+    /* 11. applySettings */
+    group('11. applySettings');
+    eq('idle + focus 30 → durationMs 1800000', 1800000, P.applySettings(s0, S30).durationMs);
+    ok('running 에선 불변(참조 동일)', P.applySettings(mid, S30) === mid);
+    eq('paused 에선 durationMs 불변', 1500000, P.applySettings(p0, S30).durationMs);
+    eq('idle short + short 10 → 600000', 600000, P.applySettings(sk, P.normalizeSettings({ short: 10 })).durationMs);
+    eq('interval 을 cyclePos 보다 줄이면 cyclePos 가 따라 내려간다 (4 → 2)', 2, P.applySettings(longIdle, S2).cyclePos);
+
+    /* 12. rollDate */
+    group('12. rollDate');
+    ok('같은 날 → 참조 동일', P.rollDate(mid, T0 + 1000) === mid);
+    var rolled = P.rollDate(mid, T0 + 86400000 * 2);
+    eq('이틀 뒤 → completed 0, cyclePos 0', [0, 0], [rolled.completed, rolled.cyclePos]);
+    eq('date 갱신', P.dateKey(T0 + 86400000 * 2), rolled.date);
+    eq('세션·상태·endAt 불변', ['focus', 'running', T0 + 1500000], [rolled.session, rolled.status, rolled.endAt]);
+    ok('date 가 실제로 달라졌다', rolled.date !== mid.date, rolled.date + ' vs ' + mid.date);
+    eq('clearToday → 0/0, 나머지 불변', [0, 0, 'running', T0 + 1500000], (function (c) { return [c.completed, c.cyclePos, c.status, c.endAt]; })(P.clearToday(mid)));
+
+    /* 13. format */
+    group('13. format');
+    eq('1500000 → 25:00', '25:00', P.format(1500000));
+    eq('1499001 → 25:00', '25:00', P.format(1499001));
+    eq('1499000 → 24:59', '24:59', P.format(1499000));
+    eq('999 → 00:01', '00:01', P.format(999));
+    eq('0 → 00:00', '00:00', P.format(0));
+    eq('-5 → 00:00', '00:00', P.format(-5));
+    eq('5400000 → 90:00', '90:00', P.format(5400000));
+    eq('61000 → 01:01', '01:01', P.format(61000));
+
+    /* 14. isValidState */
+    group('14. isValidState');
+    eq('정상(idle) → true', true, P.isValidState(s0, D));
+    eq('정상(running) → true', true, P.isValidState(r0, D));
+    eq('정상(paused) → true', true, P.isValidState(p0, D));
+    eq('v 2 → false', false, P.isValidState(Object.assign({}, s0, { v: 2 }), D));
+    eq("session 'nap' → false", false, P.isValidState(Object.assign({}, s0, { session: 'nap' }), D));
+    eq('running 인데 endAt null → false', false, P.isValidState(Object.assign({}, r0, { endAt: null }), D));
+    eq('paused 인데 remainingMs > durationMs → false', false, P.isValidState(Object.assign({}, p0, { remainingMs: 1500001 }), D));
+    eq('cyclePos 9 → false', false, P.isValidState(Object.assign({}, s0, { cyclePos: 9 }), D));
+    eq('null → false', false, P.isValidState(null, D));
+    eq("status 'done' → false", false, P.isValidState(Object.assign({}, s0, { status: 'done' }), D));
+    eq('completed -1 → false', false, P.isValidState(Object.assign({}, s0, { completed: -1 }), D));
+    eq("durationMs '1500000'(문자열) → false", false, P.isValidState(Object.assign({}, s0, { durationMs: '1500000' }), D));
+    eq('date 누락 → false', false, P.isValidState(Object.assign({}, s0, { date: undefined }), D));
+    eq('cyclePos === interval(4) → true', true, P.isValidState(longIdle, D));
+
+    /* 15. 불변성 */
+    group('15. 불변성 — 전이 뒤 입력 객체 동일');
+    frozen('start', JSON.parse(JSON.stringify(s0)), function (st) { P.start(st, T0); });
+    frozen('pause', JSON.parse(JSON.stringify(r0)), function (st) { P.pause(st, T0 + MIN); });
+    frozen('toggle', JSON.parse(JSON.stringify(r0)), function (st) { P.toggle(st, T0 + MIN); });
+    frozen('complete', JSON.parse(JSON.stringify(mid)), function (st) { P.complete(st, D, T0 + 1500000); });
+    frozen('skip', JSON.parse(JSON.stringify(mid)), function (st) { P.skip(st, D, T0); });
+    frozen('reset', JSON.parse(JSON.stringify(mid)), function (st) { P.reset(st, D, T0); });
+    frozen('applySettings', JSON.parse(JSON.stringify(s0)), function (st) { P.applySettings(st, S30); });
+    frozen('rollDate', JSON.parse(JSON.stringify(mid)), function (st) { P.rollDate(st, T0 + 86400000 * 2); });
+    frozen('clearToday', JSON.parse(JSON.stringify(mid)), function (st) { P.clearToday(st); });
+    frozen('normalizeSettings', { focus: 120, interval: 9 }, function (raw) { P.normalizeSettings(raw); });
+
+    /* 16. titleText */
+    group('16. titleText');
+    eq('running → (24:59) 집중 — 포모도로', '(24:59) 집중 — 포모도로', P.titleText(r0, T0 + 1000));
+    eq('paused → (일시정지 24:59) 집중 — 포모도로', '(일시정지 24:59) 집중 — 포모도로', P.titleText(P.pause(r0, T0 + 1000), T0 + 999999));
+    eq('idle → 포모도로 타이머', '포모도로 타이머', P.titleText(s0, T0));
+    eq('running short → (05:00) 짧은 휴식 — 포모도로', '(05:00) 짧은 휴식 — 포모도로', P.titleText(P.start(sk, T0), T0));
+    eq('sessionLabel', ['집중', '짧은 휴식', '긴 휴식'], P.SESSIONS.map(P.sessionLabel));
+
+    /* 요약 */
+    var summary = document.getElementById('summary');
+    var allPass = passed === total;
+    summary.className = 'summary ' + (allPass ? 'pass' : 'fail');
+    summary.textContent = '';
+    var strong = document.createElement('strong');
+    strong.textContent = passed + '/' + total + ' 통과' + (warned ? ' (경고 ' + warned + ')' : '');
+    summary.appendChild(strong);
+    var span = document.createElement('span');
+    span.textContent = ' · 가짜 시계 T0 = ' + T0 + ' · 실제 시각·DOM·저장소는 쓰지 않음';
+    summary.appendChild(span);
+    window.__testResult = { total: total, passed: passed, warned: warned };
+  })();
+  </script>
+</body>
+</html>

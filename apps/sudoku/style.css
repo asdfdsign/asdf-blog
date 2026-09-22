@@ -321,6 +321,67 @@ button {
 }
 
 /* --------------------------------------------------------------------------
+   사용법 — 접이식. 포모도로의 설정/사용법과 같은 모양
+   -------------------------------------------------------------------------- */
+
+.help {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+}
+.help summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 1rem;
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.help summary::-webkit-details-marker { display: none; }
+.help summary::before {
+  content: "";
+  width: 0.4em;
+  height: 0.4em;
+  margin-right: 0.625rem;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform var(--dur) var(--ease);
+}
+.help[open] summary::before { transform: rotate(45deg); }
+.help summary:focus-visible { outline-offset: -2px; }
+.help__list {
+  margin: 0;
+  padding: 0.75rem 1rem 1rem 2.25rem;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+.help__list li + li { margin-top: 0.375rem; }
+.help__list b { color: var(--text); font-weight: 600; }
+kbd {
+  display: inline-block;
+  min-width: 1.5em;
+  padding: 0 0.4em;
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+/* --------------------------------------------------------------------------
    임베드(iframe) — header 숨김, 여백 8px, 보드가 맨 위
    -------------------------------------------------------------------------- */
 
@@ -333,6 +394,7 @@ button {
 /* 좁은 카드(폭 300px)에서도 44px 버튼 여섯 개가 한 줄에 들어가게 간격만 줄인다 */
 [data-embed] .numpad__digits { gap: 0.25rem; }
 [data-embed] .controls { order: 4; }
+[data-embed] .help { display: none; }
 
 /* --------------------------------------------------------------------------
    넓은 화면 — 컨트롤이 한 줄. 2열은 하지 않는다

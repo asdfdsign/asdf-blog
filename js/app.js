@@ -1,6 +1,6 @@
 // 진입점. 해시 라우터 + 화면 렌더링.
 //   #/            → 글 목록 (전체)
-//   #/cat/{name}  → 카테고리 (daystudy | essay)
+//   #/cat/{name}  → 카테고리 (daystudy | essay | apps — 웹앱 목록)
 //   #/tag/{name}  → Daystudy 안의 주제 하나만
 //   #/post/{slug} → 글 상세
 //   그 외          → 에러 화면
@@ -12,7 +12,8 @@ const app = document.getElementById('app');
 // 카테고리(큰 묶음)와 주제(Daystudy 안의 하위 카테고리). 표시 이름과 순서는 여기서 정한다.
 // posts.json 의 category / tags 값이 키다. 여기 없는 값은 키 그대로 보여준다.
 // Daystudy 글은 전부 part 번호를 갖고 "Daystudy #N" 라벨이 붙는다.
-const CATEGORIES = { daystudy: 'Daystudy', essay: 'Essay' };
+const CATEGORIES = { daystudy: 'Daystudy', essay: 'Essay', apps: '웹앱' };
+const APPS = 'apps'; // 글이 아니라 content/apps.json 의 웹앱 목록을 보여주는 카테고리
 const TOPICS = {
   git: 'git · 배포',
   web: '웹 기초',
@@ -25,9 +26,12 @@ const topicLabel = t => TOPICS[t] || t;
 
 // 경로는 전부 상대 경로 — GitHub Pages 하위 경로(/asdf-blog/)에서도 깨지지 않게
 const INDEX_URL = './content/posts.json';
+const APPS_URL = './content/apps.json';
 const postUrl = slug => `./content/posts/${encodeURIComponent(slug)}.md`;
+const appUrl = slug => `./apps/${encodeURIComponent(slug)}/`;
 
 let indexCache = null;
+let appsCache = null;
 
 async function loadIndex() {
   if (indexCache) return indexCache;
@@ -38,6 +42,15 @@ async function loadIndex() {
   posts.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : (b.part || 0) - (a.part || 0)));
   indexCache = posts;
   return posts;
+}
+
+// 웹앱 목록. 순서는 apps.json 에 적힌 대로(최신이 위)
+async function loadApps() {
+  if (appsCache) return appsCache;
+  const res = await fetch(APPS_URL);
+  if (!res.ok) throw new Error(`apps.json 을 불러오지 못했어요 (${res.status})`);
+  appsCache = await res.json();
+  return appsCache;
 }
 
 function tpl(id) {
@@ -64,10 +77,11 @@ function fillTags(ul, tags) {
   if (!ul.children.length) ul.remove();
 }
 
-// 카테고리 바: 전체 + 카테고리별 글 수. CATEGORIES 순서, 거기 없는 것은 뒤에. 현재 선택은 aria-current.
-function fillCats(nav, posts, current) {
+// 카테고리 바: 전체(글) + 카테고리별 수. CATEGORIES 순서, 거기 없는 것은 뒤에. 현재 선택은 aria-current.
+function fillCats(nav, posts, apps, current) {
   const counts = new Map(Object.keys(CATEGORIES).map(c => [c, 0]));
   for (const p of posts) if (p.category) counts.set(p.category, (counts.get(p.category) || 0) + 1);
+  counts.set(APPS, apps.length);
   const cats = [['전체', null, posts.length], ...[...counts].filter(([, n]) => n > 0).map(([c, n]) => [catLabel(c), c, n])];
 
   nav.replaceChildren();
@@ -137,18 +151,32 @@ function makeCard(post) {
   return card;
 }
 
-// 목록은 언제나 최신순 한 줄. 카테고리·주제는 거르기만 한다.
+function makeAppCard(app) {
+  const card = tpl('tpl-app-card');
+  card.querySelector('.post-card__link').href = appUrl(app.slug);
+  const time = card.querySelector('.post-card__date');
+  time.dateTime = app.date;
+  time.textContent = formatDate(app.date);
+  card.querySelector('.post-card__title').textContent = app.title;
+  card.querySelector('.post-card__summary').textContent = app.summary || '';
+  return card;
+}
+
+// 목록은 언제나 최신순 한 줄. 카테고리·주제는 거르기만 한다. 웹앱 카테고리는 apps.json 을 보여준다.
 async function renderList({ category = null, tag = null } = {}) {
-  const posts = await loadIndex();
+  const [posts, apps] = await Promise.all([loadIndex(), loadApps()]);
   const view = tpl('tpl-list');
   const list = view.querySelector('.post-list');
 
   // 주제는 Daystudy 안의 것이므로, 주제로 걸러도 카테고리 바에서는 Daystudy 가 선택된 상태
   if (tag) category = 'daystudy';
-  fillCats(view.querySelector('.cats'), posts, category);
+  fillCats(view.querySelector('.cats'), posts, apps, category);
 
-  // 웹앱 카드는 전체 목록에서만. 거른 화면에서는 iframe 을 아예 떼어 로드하지 않는다
-  if (category) view.querySelector('.apps').remove();
+  if (category === APPS) {
+    view.querySelector('.post-list__empty').hidden = apps.length > 0;
+    for (const app of apps) list.append(makeAppCard(app));
+    return show(view, catLabel(APPS));
+  }
 
   let shown = posts;
   let title = null;

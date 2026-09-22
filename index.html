@@ -39,26 +39,6 @@
         <h1 class="hero__title">기록<span class="accent">.</span></h1>
         <p class="hero__lead">HTML, CSS, JavaScript만으로 만든 마크다운 블로그. 배운 것을 짧게 남깁니다.</p>
       </div>
-      <!-- 미니 웹앱 카드. 전체 목록(#/)에서만 보이고, 카테고리·주제로 거르면 숨긴다 (app.js) -->
-      <section class="apps" aria-labelledby="apps-title">
-        <h2 class="kicker apps__title" id="apps-title">미니 웹앱</h2>
-        <article class="app-card">
-          <div class="app-card__body">
-            <h3 class="app-card__title"><a href="./apps/pomodoro/" target="_blank" rel="noopener">포모도로 타이머</a></h3>
-            <p class="app-card__desc">25분 집중, 5분 휴식. 줄어드는 원을 보며 한 번에 하나만. 탭을 닫아도 시간은 정확히.</p>
-            <a class="app-card__open" href="./apps/pomodoro/" target="_blank" rel="noopener">새 탭에서 열기 ↗</a>
-          </div>
-          <iframe class="app-card__frame" src="./apps/pomodoro/" title="포모도로 타이머 미리보기" loading="lazy" height="480"></iframe>
-        </article>
-        <article class="app-card">
-          <div class="app-card__body">
-            <h3 class="app-card__title"><a href="./apps/sudoku/" target="_blank" rel="noopener">미니 스도쿠</a></h3>
-            <p class="app-card__desc">4×4·6×6 작은 판으로 가볍게 푸는 스도쿠. 매번 새 퍼즐, 진행 상태는 브라우저에 저장.</p>
-            <a class="app-card__open" href="./apps/sudoku/" target="_blank" rel="noopener">새 탭에서 열기 ↗</a>
-          </div>
-          <iframe class="app-card__frame" src="./apps/sudoku/" title="미니 스도쿠 미리보기" loading="lazy" height="480"></iframe>
-        </article>
-      </section>
       <nav class="cats" aria-label="카테고리"></nav>
       <nav class="cats topics" aria-label="주제" hidden></nav>
       <ol class="post-list"></ol>
@@ -75,6 +55,19 @@
         <p class="post-card__summary"></p>
       </a>
       <ul class="tags"></ul>
+    </li>
+  </template>
+
+  <!-- 웹앱 카드 — 글 카드와 같은 모양. 누르면 앱 페이지로 간다 -->
+  <template id="tpl-app-card">
+    <li class="post-card">
+      <a class="post-card__link" href="#">
+        <time class="post-card__date"></time>
+        <p class="kicker post-card__kicker">웹앱</p>
+        <h2 class="post-card__title"></h2>
+        <p class="post-card__summary"></p>
+        <p class="post-card__open">열기 ↗</p>
+      </a>
     </li>
   </template>
 

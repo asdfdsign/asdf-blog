@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>sudoku.js 테스트</title>
+  <meta name="color-scheme" content="light dark">
+  <script src="./theme.js"></script>
+  <style>
+    /* 테스트 페이지 전용. 색은 앱 팔레트 변수만 쓴다 */
+    :root { --bg: #fbfaf9; --bg-elevated: #f2efec; --text: #1c1917; --text-muted: #6b6461; --border: #e4dfdb; --accent: #c8202a; --ok: #2f7d4f; --warn: #a1620a; }
+    [data-theme="dark"] { --bg: #141214; --bg-elevated: #1e1b1d; --text: #ece7e4; --text-muted: #a39a96; --border: #2c2729; --accent: #ff6b6e; --ok: #6cc08b; --warn: #e0a24a; }
+    body { margin: 0; padding: 1rem; background: var(--bg); color: var(--text); font-family: "Pretendard Variable", Pretendard, system-ui, sans-serif; font-size: 0.9375rem; line-height: 1.5; }
+    h1 { font-size: 1.25rem; margin: 0 0 0.5rem; }
+    .summary { padding: 0.75rem 1rem; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-elevated); margin-bottom: 1rem; }
+    .summary strong { font-size: 1.125rem; }
+    .summary.fail strong { color: var(--accent); }
+    .summary.pass strong { color: var(--ok); }
+    .wrap { overflow-x: auto; }
+    table { border-collapse: collapse; width: 100%; min-width: 640px; font-variant-numeric: tabular-nums; }
+    th, td { text-align: left; padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: var(--text-muted); font-weight: 600; }
+    td.mono { font-family: ui-monospace, Consolas, monospace; font-size: 0.85em; word-break: break-all; }
+    tr.pass td.result { color: var(--ok); font-weight: 600; }
+    tr.fail td.result { color: var(--accent); font-weight: 600; }
+    tr.warn td.result { color: var(--warn); font-weight: 600; }
+    tr.group td { background: var(--bg-elevated); color: var(--text-muted); font-weight: 600; }
+  </style>
+</head>
+<body>
+  <h1>sudoku.js 테스트</h1>
+  <div class="summary" id="summary">실행 중…</div>
+  <div class="wrap">
+    <table>
+      <thead><tr><th>이름</th><th>기대</th><th>실제</th><th>통과</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+
+  <script src="./sudoku.js"></script>
+  <script>
+  (function () {
+    'use strict';
+    var S = window.Sudoku;
+    var rows = document.getElementById('rows');
+    var total = 0, passed = 0, warned = 0;
+
+    function fmt(v) {
+      if (Array.isArray(v)) return '[' + v.join(',') + ']';
+      if (typeof v === 'object' && v !== null) return JSON.stringify(v);
+      return String(v);
+    }
+
+    // 결과 한 줄. status: 'pass' | 'fail' | 'warn' (warn 은 통과로 센다)
+    function row(name, expected, actual, status) {
+      total++;
+      if (status !== 'fail') passed++;
+      if (status === 'warn') warned++;
+      var tr = document.createElement('tr');
+      tr.className = status;
+      [name, fmt(expected), fmt(actual), status === 'pass' ? '통과' : status === 'warn' ? '경고' : '실패'].forEach(function (text, i) {
+        var td = document.createElement('td');
+        if (i === 1 || i === 2) td.className = 'mono';
+        if (i === 3) td.className = 'result';
+        td.textContent = text;
+        tr.appendChild(td);
+      });
+      rows.appendChild(tr);
+    }
+    function eq(name, expected, actual) { row(name, expected, actual, fmt(expected) === fmt(actual) ? 'pass' : 'fail'); }
+    function ok(name, cond, detail) { row(name, 'true', detail == null ? cond : detail, cond ? 'pass' : 'fail'); }
+    function group(title) {
+      var tr = document.createElement('tr'); tr.className = 'group';
+      var td = document.createElement('td'); td.colSpan = 4; td.textContent = title;
+      tr.appendChild(td); rows.appendChild(tr);
+    }
+    function throwsFor(fn) { try { fn(); return false; } catch (e) { return true; } }
+
+    // 행·열·박스가 전부 1..N 순열인가
+    function isPermutationGrid(grid, n) {
+      var d = S.boxDims(n);
+      var full = ((1 << (n + 1)) - 1) & ~1;
+      for (var i = 0; i < n; i++) {
+        var rm = 0, cm = 0, bm = 0;
+        var br = Math.floor(i / (n / d.cols)) * d.rows, bc = (i % (n / d.cols)) * d.cols;
+        for (var k = 0; k < n; k++) {
+          rm |= 1 << grid[i * n + k];
+          cm |= 1 << grid[k * n + i];
+          bm |= 1 << grid[(br + Math.floor(k / d.cols)) * n + bc + (k % d.cols)];
+        }
+        if (rm !== full || cm !== full || bm !== full) return false;
+      }
+      return true;
+    }
+    function same(a, b) { return a.length === b.length && a.every(function (v, i) { return v === b[i]; }); }
+
+    /* 1. boxDims */
+    group('1. boxDims');
+    eq('boxDims(4)', { rows: 2, cols: 2 }, S.boxDims(4));
+    eq('boxDims(6)', { rows: 2, cols: 3 }, S.boxDims(6));
+    eq('boxDims(9)', { rows: 3, cols: 3 }, S.boxDims(9));
+    ok('boxDims(5) 는 throw', throwsFor(function () { S.boxDims(5); }));
+
+    /* 2. generateSolution */
+    group('2. generateSolution — 행·열·박스가 1..N 순열 (각 10회)');
+    [4, 6].forEach(function (n) {
+      var good = 0;
+      for (var i = 0; i < 10; i++) if (isPermutationGrid(S.generateSolution(n), n)) good++;
+      eq('generateSolution(' + n + ') ×10', '10/10', good + '/10');
+    });
+
+    /* 3. 시드 재현 */
+    group('3. createRng / generate 시드 재현');
+    var r1 = S.createRng(42), r2 = S.createRng(42), a = [], b = [];
+    for (var i = 0; i < 5; i++) { a.push(r1()); b.push(r2()); }
+    eq('createRng(42) 처음 5개 동일', a, b);
+    var g1 = S.generate({ size: 6, difficulty: 'normal', seed: 42 });
+    var g2 = S.generate({ size: 6, difficulty: 'normal', seed: 42 });
+    eq('generate(seed 42) puzzle 동일', S.encode(g1.puzzle), S.encode(g2.puzzle));
+    ok('generate 가 seed 를 그대로 돌려준다', g1.seed === 42, g1.seed);
+
+    /* 4·5. 크기 × 난이도 × 20회 */
+    group('4. generate — 크기 2 × 난이도 3 × 20회');
+    var times = [];
+    S.SIZES.forEach(function (n) {
+      ['easy', 'normal', 'hard'].forEach(function (diff) {
+        var target = S.DIFFICULTY[n][diff];
+        var unique = 0, solved = 0, givens = 0, short = 0, minBlanks = Infinity;
+        for (var k = 0; k < 20; k++) {
+          var t0 = performance.now();
+          var g = S.generate({ size: n, difficulty: diff });
+          times.push(performance.now() - t0);
+          if (S.countSolutions(g.puzzle, n) === 1) unique++;
+          var sol = S.solve(g.puzzle, n);
+          if (sol && same(sol, g.solution)) solved++;
+          var givenOk = g.puzzle.every(function (v, i) { return v === 0 || v === g.solution[i]; });
+          var blanks = g.puzzle.filter(function (v) { return v === 0; }).length;
+          if (givenOk && blanks === g.blanks) givens++;
+          if (g.blanks < target) { short++; minBlanks = Math.min(minBlanks, g.blanks); }
+        }
+        var label = n + '×' + n + ' ' + diff + ' ×20';
+        eq(label + ' — countSolutions(puzzle) === 1', '20/20', unique + '/20');
+        eq(label + ' — solve(puzzle) === solution', '20/20', solved + '/20');
+        eq(label + ' — given 이 solution 과 일치, blanks 값 정확', '20/20', givens + '/20');
+        row(label + ' — blanks === 목표(' + target + ')', '미달 0회',
+          short === 0 ? '미달 0회' : '미달 ' + short + '회 (최소 ' + minBlanks + '칸)',
+          short === 0 ? 'pass' : 'warn');
+      });
+    });
+
+    group('5. 생성 시간 (위 120회)');
+    var sum = times.reduce(function (x, y) { return x + y; }, 0);
+    var avg = sum / times.length, max = Math.max.apply(null, times);
+    row('generate 평균 ms', '-', avg.toFixed(2), 'pass');
+    row('generate 최대 ms < 100', '< 100', max.toFixed(2), max < 100 ? 'pass' : 'fail');
+
+    /* 6. findConflicts */
+    group('6. findConflicts');
+    var full4 = S.generateSolution(4, S.createRng(7));
+    eq('충돌 없는 완성판 → []', [], S.findConflicts(full4, 4));
+    // 4×4: 인덱스 0..3 이 1행, 0/4/8/12 가 1열, 0/1/4/5 가 첫 박스
+    var rowC = full4.slice(); rowC[1] = rowC[0];
+    ok('행 충돌 (0,1 포함)', S.findConflicts(rowC, 4).indexOf(0) !== -1 && S.findConflicts(rowC, 4).indexOf(1) !== -1, S.findConflicts(rowC, 4));
+    var colC = full4.slice(); colC[8] = colC[0];
+    ok('열 충돌 (0,8 포함)', S.findConflicts(colC, 4).indexOf(0) !== -1 && S.findConflicts(colC, 4).indexOf(8) !== -1, S.findConflicts(colC, 4));
+    var boxC = full4.slice(); boxC[5] = boxC[0];
+    ok('박스 충돌 (0,5 포함)', S.findConflicts(boxC, 4).indexOf(0) !== -1 && S.findConflicts(boxC, 4).indexOf(5) !== -1, S.findConflicts(boxC, 4));
+    // given 이 포함된 충돌: 퍼즐의 빈칸에 같은 행의 given 값을 넣는다
+    var gp = S.generate({ size: 4, difficulty: 'normal', seed: 3 });
+    // 같은 행에 given 이 있는 빈칸을 고른다 (행 전체가 비어 있을 수도 있으므로)
+    var blank = -1, givenIdx = -1;
+    for (var bi = 0; bi < 16 && givenIdx === -1; bi++) {
+      if (gp.puzzle[bi] !== 0) continue;
+      var rowStart = Math.floor(bi / 4) * 4;
+      for (var c = rowStart; c < rowStart + 4; c++) if (gp.puzzle[c] !== 0) { blank = bi; givenIdx = c; break; }
+    }
+    var board = gp.puzzle.slice(); board[blank] = gp.puzzle[givenIdx];
+    var conf = S.findConflicts(board, 4);
+    ok('given 이 포함된 충돌 (빈칸 ' + blank + ' + given ' + givenIdx + ')', conf.indexOf(blank) !== -1 && conf.indexOf(givenIdx) !== -1, conf);
+    var sorted = conf.every(function (v, i) { return i === 0 || conf[i - 1] < v; });
+    ok('결과가 중복 없이 오름차순', sorted, conf);
+    var before = S.encode(board);
+    S.findConflicts(board, 4);
+    eq('입력 배열을 바꾸지 않는다', before, S.encode(board));
+
+    /* 7. isComplete */
+    group('7. isComplete');
+    var full6 = S.generateSolution(6, S.createRng(11));
+    eq('완성판 → true', true, S.isComplete(full6, 6));
+    var oneBlank = full6.slice(); oneBlank[17] = 0;
+    eq('빈칸 하나 → false', false, S.isComplete(oneBlank, 6));
+    var fullConf = full6.slice(); fullConf[1] = fullConf[0];
+    eq('다 찼지만 충돌 → false', false, S.isComplete(fullConf, 6));
+
+    /* 8. encode / decode / isValidBoard */
+    group('8. encode / decode / isValidBoard');
+    var enc = S.encode(gp.puzzle);
+    ok('encode 는 길이 16 의 0-9 문자열', /^[0-9]{16}$/.test(enc), enc);
+    eq('decode(encode(x)) === x', gp.puzzle, S.decode(enc));
+    eq('isValidBoard 정상', true, S.isValidBoard(gp.puzzle, 4));
+    eq('isValidBoard 길이 오류 (15칸)', false, S.isValidBoard(gp.puzzle.slice(0, 15), 4));
+    var bad = gp.puzzle.slice(); bad[0] = 5;
+    eq('isValidBoard 값 범위 오류 (5 in 4×4)', false, S.isValidBoard(bad, 4));
+    var neg = gp.puzzle.slice(); neg[0] = -1;
+    eq('isValidBoard 음수', false, S.isValidBoard(neg, 4));
+    eq('isValidBoard 미지원 크기', false, S.isValidBoard(gp.puzzle, 5));
+    eq('decode 에 숫자 아닌 글자 → isValidBoard false', false, S.isValidBoard(S.decode('12x4' + enc.slice(4)), 4));
+
+    /* 9. digitCounts */
+    group('9. digitCounts');
+    eq('완성판 4×4 → 각 4개', [0, 4, 4, 4, 4], S.digitCounts(full4, 4));
+    eq('빈 판 6×6 → 전부 0', [0, 0, 0, 0, 0, 0, 0], S.digitCounts([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 6));
+    eq('[1,2,0,1] → 1 이 2개, 2 가 1개', [0, 2, 1, 0, 0], S.digitCounts([1, 2, 0, 1], 4));
+
+    /* 요약 */
+    var summary = document.getElementById('summary');
+    var allPass = passed === total;
+    summary.className = 'summary ' + (allPass ? 'pass' : 'fail');
+    summary.textContent = '';
+    var strong = document.createElement('strong');
+    strong.textContent = passed + '/' + total + ' 통과' + (warned ? ' (경고 ' + warned + ')' : '');
+    summary.appendChild(strong);
+    var span = document.createElement('span');
+    span.textContent = ' · 생성 시간 평균 ' + avg.toFixed(2) + 'ms · 최대 ' + max.toFixed(2) + 'ms (120회)';
+    summary.appendChild(span);
+    window.__testResult = { total: total, passed: passed, warned: warned, avg: avg, max: max };
+  })();
+  </script>
+</body>
+</html>

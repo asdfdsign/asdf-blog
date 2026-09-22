@@ -147,6 +147,9 @@ async function renderList({ category = null, tag = null } = {}) {
   if (tag) category = 'daystudy';
   fillCats(view.querySelector('.cats'), posts, category);
 
+  // 웹앱 카드는 전체 목록에서만. 거른 화면에서는 iframe 을 아예 떼어 로드하지 않는다
+  if (category) view.querySelector('.apps').remove();
+
   let shown = posts;
   let title = null;
   if (category) {

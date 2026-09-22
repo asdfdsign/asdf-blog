@@ -1,0 +1,355 @@
+/* ==========================================================================
+   미니 스도쿠 — 단일 스타일시트
+   색은 전부 아래 변수 블록에만 있다. 컴포넌트에 색상값을 직접 쓰지 않는다.
+   팔레트는 블로그(css/style.css)와 같다.
+   ========================================================================== */
+
+:root {
+  color-scheme: light;
+
+  --bg: #fbfaf9;
+  --bg-elevated: #f2efec;
+  --text: #1c1917;
+  --text-muted: #6b6461;
+  --border: #e4dfdb;
+
+  --accent: #c8202a;
+  --accent-hover: #a5141d;
+  --accent-soft: #fbe9ea;
+  --accent-contrast: #ffffff;
+
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
+    system-ui, "Segoe UI", Roboto, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+
+  --radius: 10px;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --dur: 150ms;
+  --gutter: 16px;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #141214;
+  --bg-elevated: #1e1b1d;
+  --text: #ece7e4;
+  --text-muted: #a39a96;
+  --border: #2c2729;
+
+  --accent: #ff6b6e;
+  --accent-hover: #ff8a8c;
+  --accent-soft: #3a1e20;
+  --accent-contrast: #141214;
+}
+
+/* --------------------------------------------------------------------------
+   리셋 · 베이스
+   -------------------------------------------------------------------------- */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  touch-action: manipulation; /* 더블탭 확대 지연 제거. user-scalable=no 는 쓰지 않는다 */
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   헤더
+   -------------------------------------------------------------------------- */
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 0.25rem var(--gutter);
+  min-height: 56px;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-left: -0.5rem;
+  padding: 0 0.5rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.9375rem;
+  border-radius: 999px;
+  transition: color var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+.back-link:hover { color: var(--accent); transform: translateX(-2px); }
+
+.app-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.theme-toggle {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-right: -0.5rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  transition: color var(--dur) var(--ease), background-color var(--dur) var(--ease);
+}
+.theme-toggle:hover { color: var(--accent); background: var(--accent-soft); }
+.theme-toggle .icon { grid-area: 1 / 1; transition: opacity var(--dur) var(--ease), transform 300ms var(--ease); }
+.theme-toggle .icon--moon { opacity: 0; transform: rotate(-40deg) scale(0.7); }
+[data-theme="dark"] .theme-toggle .icon--sun { opacity: 0; transform: rotate(40deg) scale(0.7); }
+[data-theme="dark"] .theme-toggle .icon--moon { opacity: 1; transform: none; }
+
+/* --------------------------------------------------------------------------
+   레이아웃 — 모바일 한 열. 임베드에선 순서만 바꾼다
+   -------------------------------------------------------------------------- */
+
+.game {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 0.25rem var(--gutter) 1.5rem;
+}
+
+/* --------------------------------------------------------------------------
+   컨트롤 — 세그먼트(라디오) + 새 게임
+   -------------------------------------------------------------------------- */
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.segment {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-elevated);
+}
+.segment button {
+  min-width: 44px;
+  min-height: 44px; /* 터치 타겟. 바깥 pill 은 2px 패딩 + 1px 테두리로 50px */
+  padding: 0 0.875rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+  font-variant-numeric: tabular-nums;
+  transition: color var(--dur) var(--ease), background-color var(--dur) var(--ease);
+}
+.segment button:hover { color: var(--text); }
+.segment button[aria-checked="true"] {
+  background: var(--bg);
+  color: var(--accent);
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+.segment button:focus-visible { outline-offset: -2px; }
+
+.btn {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  color: var(--text);
+  font-size: 0.9375rem;
+  transition: transform var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.btn:hover { border-color: var(--text-muted); transform: translateY(-1px); }
+.btn:active { transform: none; }
+.btn:disabled { color: var(--text-muted); cursor: default; transform: none; border-color: var(--border); }
+
+.btn--new { flex: 1 0 100%; }
+
+/* --------------------------------------------------------------------------
+   보드 — 행은 grid, 보드는 flex 열. display:contents 없이 role="row" 를 유지한다
+   -------------------------------------------------------------------------- */
+
+.board {
+  --n: 6;
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 440px);
+  aspect-ratio: 1;
+  margin: 0 auto;
+  border: 2px solid var(--text);
+  border-radius: 4px;
+  background: var(--bg);
+  transition: border-color var(--dur) var(--ease);
+}
+.board.is-complete { border-color: var(--accent); }
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  flex: 1;
+  min-height: 0;
+}
+
+.cell {
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 1.5rem;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.board[data-size="4"] .cell { font-size: 1.75rem; }
+.cell:last-child { border-right: 0; }
+.row:last-child .cell { border-bottom: 0; }
+.cell.box-r { border-right: 2px solid var(--text); }
+.cell.box-b { border-bottom: 2px solid var(--text); }
+.cell:focus-visible { outline-offset: -2px; }
+
+/* 칸 상태 — 뒤에 올수록 우선. 색 아닌 단서(굵기·물결 밑줄·inset 링)를 함께 준다 */
+.cell.is-given { font-weight: 700; }
+.cell.is-hinted { color: var(--text-muted); }
+.cell.is-peer { background: var(--bg-elevated); }
+.cell.is-same { color: var(--accent); }
+.cell.is-selected {
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+.cell.is-conflict {
+  background: var(--accent-soft);
+  color: var(--accent);
+  text-decoration: underline wavy;
+  text-underline-offset: 0.15em;
+}
+
+/* 완성 — 왼쪽 위에서 대각선으로 퍼지는 짧은 stagger. --i 는 row + col, 6×6 최대 10 → 0.6초 안 */
+@keyframes cell-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.12); color: var(--accent); }
+  100% { transform: scale(1); }
+}
+.board.is-complete .cell {
+  animation: cell-pop 200ms var(--ease) calc(var(--i, 0) * 40ms) both;
+}
+
+/* --------------------------------------------------------------------------
+   상태 줄
+   -------------------------------------------------------------------------- */
+
+.status {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  min-height: 1.5rem;
+  padding: 0 0.25rem;
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+  font-variant-numeric: tabular-nums;
+}
+.status.is-complete .status__info { color: var(--accent); font-weight: 600; }
+
+/* --------------------------------------------------------------------------
+   숫자 패드
+   -------------------------------------------------------------------------- */
+
+.numpad {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.numpad__digits {
+  display: grid;
+  grid-template-columns: repeat(var(--n, 6), 1fr);
+  gap: 0.375rem;
+}
+.numpad__digits .btn {
+  padding: 0;
+  font-size: 1.25rem;
+  font-variant-numeric: tabular-nums;
+}
+.numpad__digits .btn.is-done {
+  color: var(--text-muted);
+  background: transparent;
+  border-style: dashed;
+}
+.numpad__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.375rem;
+}
+
+/* --------------------------------------------------------------------------
+   임베드(iframe) — header 숨김, 여백 8px, 보드가 맨 위
+   -------------------------------------------------------------------------- */
+
+[data-embed] { --gutter: 8px; }
+[data-embed] .app-header { display: none; }
+[data-embed] .game { gap: 0.5rem; padding-top: var(--gutter); padding-bottom: var(--gutter); }
+[data-embed] .board { order: 1; width: min(100%, 440px, calc(100dvh - 120px)); }
+[data-embed] .status { order: 2; }
+[data-embed] .numpad { order: 3; }
+/* 좁은 카드(폭 300px)에서도 44px 버튼 여섯 개가 한 줄에 들어가게 간격만 줄인다 */
+[data-embed] .numpad__digits { gap: 0.25rem; }
+[data-embed] .controls { order: 4; }
+
+/* --------------------------------------------------------------------------
+   넓은 화면 — 컨트롤이 한 줄. 2열은 하지 않는다
+   -------------------------------------------------------------------------- */
+
+@media (min-width: 640px) {
+  .btn--new { flex: 0 0 auto; margin-left: auto; }
+}
+
+/* --------------------------------------------------------------------------
+   모션 줄이기 — 전부 끈다
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+  .btn:hover, .back-link:hover { transform: none; }
+}

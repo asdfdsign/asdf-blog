@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>미니 스도쿠</title>
+  <meta name="description" content="4×4·6×6 작은 판으로 가볍게 푸는 스도쿠. 매번 새 퍼즐.">
+  <meta name="color-scheme" content="light dark">
+  <link rel="stylesheet" href="./style.css">
+  <!-- 첫 페인트 전에 data-theme / data-embed 를 붙여야 하므로 동기 로드 -->
+  <script src="./theme.js"></script>
+</head>
+<body>
+  <header class="app-header">
+    <a class="back-link" href="../../">← 블로그</a>
+    <h1 class="app-title">미니 스도쿠</h1>
+    <button class="theme-toggle" type="button" aria-label="다크 모드 전환" aria-pressed="false">
+      <svg class="icon icon--sun" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+        <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/>
+        <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <svg class="icon icon--moon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+        <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </header>
+
+  <main class="game">
+    <section class="controls" aria-label="게임 설정">
+      <div class="segment" role="radiogroup" aria-label="판 크기" data-pref="size">
+        <button type="button" role="radio" aria-checked="false" data-value="4">4×4</button>
+        <button type="button" role="radio" aria-checked="true" data-value="6">6×6</button>
+      </div>
+      <div class="segment" role="radiogroup" aria-label="난이도" data-pref="difficulty">
+        <button type="button" role="radio" aria-checked="false" data-value="easy">쉬움</button>
+        <button type="button" role="radio" aria-checked="true" data-value="normal">보통</button>
+        <button type="button" role="radio" aria-checked="false" data-value="hard">어려움</button>
+      </div>
+      <button type="button" class="btn btn--new" id="new-game">새 게임</button>
+    </section>
+
+    <div class="board" id="board" role="grid" aria-label="스도쿠 6×6 보드" data-size="6"></div>
+
+    <div class="status" aria-live="polite">
+      <span class="status__time" id="time" aria-hidden="true">00:00</span>
+      <span class="status__info" id="info"></span>
+    </div>
+
+    <section class="numpad" aria-label="숫자 입력">
+      <div class="numpad__digits" id="digits"></div>
+      <div class="numpad__actions">
+        <button type="button" class="btn" id="erase">지우기</button>
+        <button type="button" class="btn" id="hint">힌트</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="./sudoku.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>

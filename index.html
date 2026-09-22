@@ -23,9 +23,16 @@
         </svg>
       </button>
     </div>
-    <!-- 카테고리 바 — 어느 화면에서든 보인다. 내용은 app.js 가 채운다 -->
-    <nav class="wrap cats site-nav" aria-label="카테고리"></nav>
   </header>
+  <!-- 히어로 — 목록 화면에서만. 글 상세에서는 app.js 가 숨긴다 -->
+  <section class="hero" id="hero">
+    <div class="wrap">
+      <h1 class="hero__title">기록<span class="accent">.</span></h1>
+      <p class="hero__lead">HTML, CSS, JavaScript만으로 만든 마크다운 블로그. 배운 것을 짧게 남깁니다.</p>
+    </div>
+  </section>
+  <!-- 카테고리 바 — 히어로 아래. 어느 화면에서든 보이고 스크롤하면 헤더 아래에 붙는다. 내용은 app.js 가 채운다 -->
+  <nav class="site-nav"><div class="wrap cats" aria-label="카테고리"></div></nav>
 
   <main id="app" class="wrap" aria-live="polite"></main>
 
@@ -37,10 +44,6 @@
 
   <template id="tpl-list">
     <section class="view view--list">
-      <div class="hero">
-        <h1 class="hero__title">기록<span class="accent">.</span></h1>
-        <p class="hero__lead">HTML, CSS, JavaScript만으로 만든 마크다운 블로그. 배운 것을 짧게 남깁니다.</p>
-      </div>
       <nav class="cats topics" aria-label="주제" hidden></nav>
       <ol class="post-list"></ol>
       <p class="post-list__empty" hidden>이 카테고리에는 아직 글이 없어요.</p>

@@ -124,6 +124,8 @@ function fillKicker(el, post) {
 }
 
 function show(node, title) {
+  // 히어로는 목록 화면에서만
+  document.getElementById('hero').hidden = !node.classList.contains('view--list');
   app.replaceChildren(node);
   document.title = title ? `${title} — ${SITE_TITLE}` : SITE_TITLE;
   window.scrollTo({ top: 0, behavior: 'instant' });
@@ -165,7 +167,7 @@ function makeAppCard(app) {
 // 헤더의 카테고리 바를 현재 화면에 맞춰 다시 채운다. 어느 화면에서든 보인다.
 async function syncNav(current) {
   const [posts, apps] = await Promise.all([loadIndex(), loadApps()]);
-  fillCats(document.querySelector('.site-nav'), posts, apps, current);
+  fillCats(document.querySelector('.site-nav .cats'), posts, apps, current);
 }
 
 // 최신순 정렬. 같은 날짜면 Daystudy 번호가 큰 쪽이 먼저

@@ -77,12 +77,12 @@ function fillTags(ul, tags) {
   if (!ul.children.length) ul.remove();
 }
 
-// 카테고리 바: 전체(글) + 카테고리별 수. CATEGORIES 순서, 거기 없는 것은 뒤에. 현재 선택은 aria-current.
+// 카테고리 바(헤더): 전체(글 + 웹앱) + 카테고리별 수. CATEGORIES 순서, 거기 없는 것은 뒤에. 현재 선택은 aria-current.
 function fillCats(nav, posts, apps, current) {
   const counts = new Map(Object.keys(CATEGORIES).map(c => [c, 0]));
   for (const p of posts) if (p.category) counts.set(p.category, (counts.get(p.category) || 0) + 1);
   counts.set(APPS, apps.length);
-  const cats = [['전체', null, posts.length], ...[...counts].filter(([, n]) => n > 0).map(([c, n]) => [catLabel(c), c, n])];
+  const cats = [['전체', null, posts.length + apps.length], ...[...counts].filter(([, n]) => n > 0).map(([c, n]) => [catLabel(c), c, n])];
 
   nav.replaceChildren();
   for (const [label, cat, n] of cats) {
@@ -162,7 +162,16 @@ function makeAppCard(app) {
   return card;
 }
 
-// 목록은 언제나 최신순 한 줄. 카테고리·주제는 거르기만 한다. 웹앱 카테고리는 apps.json 을 보여준다.
+// 헤더의 카테고리 바를 현재 화면에 맞춰 다시 채운다. 어느 화면에서든 보인다.
+async function syncNav(current) {
+  const [posts, apps] = await Promise.all([loadIndex(), loadApps()]);
+  fillCats(document.querySelector('.site-nav'), posts, apps, current);
+}
+
+// 최신순 정렬. 같은 날짜면 Daystudy 번호가 큰 쪽이 먼저
+const byDateDesc = (a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : (b.part || 0) - (a.part || 0));
+
+// 목록은 언제나 최신순 한 줄. 전체는 글과 웹앱을 섞고, 카테고리·주제는 거르기만 한다.
 async function renderList({ category = null, tag = null } = {}) {
   const [posts, apps] = await Promise.all([loadIndex(), loadApps()]);
   const view = tpl('tpl-list');
@@ -170,18 +179,19 @@ async function renderList({ category = null, tag = null } = {}) {
 
   // 주제는 Daystudy 안의 것이므로, 주제로 걸러도 카테고리 바에서는 Daystudy 가 선택된 상태
   if (tag) category = 'daystudy';
-  fillCats(view.querySelector('.cats'), posts, apps, category);
+  await syncNav(category);
 
-  if (category === APPS) {
-    view.querySelector('.post-list__empty').hidden = apps.length > 0;
-    for (const app of apps) list.append(makeAppCard(app));
-    return show(view, catLabel(APPS));
-  }
-
-  let shown = posts;
+  // 글과 앱을 한 목록에. 앱은 kind 로 구분해 카드 모양을 고른다
+  let shown = [
+    ...posts.map(p => ({ kind: 'post', ...p })),
+    ...apps.map(a => ({ kind: 'app', ...a })),
+  ].sort(byDateDesc);
   let title = null;
-  if (category) {
-    shown = posts.filter(p => p.category === category);
+  if (category === APPS) {
+    shown = shown.filter(x => x.kind === 'app');
+    title = catLabel(APPS);
+  } else if (category) {
+    shown = shown.filter(x => x.kind === 'post' && x.category === category);
     title = catLabel(category);
   }
   if (category === 'daystudy') fillTopics(view.querySelector('.topics'), shown, tag);
@@ -191,7 +201,7 @@ async function renderList({ category = null, tag = null } = {}) {
   }
   view.querySelector('.post-list__empty').hidden = shown.length > 0;
 
-  for (const post of shown) list.append(makeCard(post));
+  for (const item of shown) list.append(item.kind === 'app' ? makeAppCard(item) : makeCard(item));
 
   show(view, title);
 }
@@ -199,6 +209,7 @@ async function renderList({ category = null, tag = null } = {}) {
 async function renderPost(slug) {
   const posts = await loadIndex();
   const meta = posts.find(p => p.slug === slug);
+  await syncNav(meta ? meta.category : null);
   if (!meta) return renderError(`"${slug}" 라는 글은 목록에 없어요.`);
 
   const res = await fetch(postUrl(slug));
@@ -242,12 +253,14 @@ async function route() {
     if (cat) return await renderList({ category: decodeURIComponent(cat[1]) });
     if (tag) return await renderList({ tag: decodeURIComponent(tag[1]) });
     if (post) return await renderPost(decodeURIComponent(post[1]));
+    await syncNav(null);
     renderError('주소가 올바르지 않아요.');
   } catch (err) {
     console.error(err);
     renderError(err.message || '알 수 없는 오류가 났어요.');
   }
 }
+
 
 // ---------------------------------------------------------------- 테마 토글
 

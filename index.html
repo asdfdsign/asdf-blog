@@ -23,6 +23,8 @@
         </svg>
       </button>
     </div>
+    <!-- 카테고리 바 — 어느 화면에서든 보인다. 내용은 app.js 가 채운다 -->
+    <nav class="wrap cats site-nav" aria-label="카테고리"></nav>
   </header>
 
   <main id="app" class="wrap" aria-live="polite"></main>
@@ -39,7 +41,6 @@
         <h1 class="hero__title">기록<span class="accent">.</span></h1>
         <p class="hero__lead">HTML, CSS, JavaScript만으로 만든 마크다운 블로그. 배운 것을 짧게 남깁니다.</p>
       </div>
-      <nav class="cats" aria-label="카테고리"></nav>
       <nav class="cats topics" aria-label="주제" hidden></nav>
       <ol class="post-list"></ol>
       <p class="post-list__empty" hidden>이 카테고리에는 아직 글이 없어요.</p>

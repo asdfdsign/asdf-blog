@@ -1,5 +1,16 @@
 [
   {
+    "slug": "subagent-plan-build-review",
+    "category": "daystudy",
+    "part": 10,
+    "title": "서브에이전트에게 역할을 나눠 맡기기",
+    "date": "2026-09-22",
+    "tags": [
+      "claude-code"
+    ],
+    "summary": "미니 웹앱 두 개를 Plan·Build·Review·Embed 서브에이전트로 나눠 만들며 왜 나누는지 정리했다."
+  },
+  {
     "slug": "claude-code-deny-rules",
     "category": "daystudy",
     "part": 7,

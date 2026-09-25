@@ -1,5 +1,16 @@
 [
   {
+    "slug": "daystudy-10",
+    "category": "daystudy",
+    "part": 10,
+    "title": "서브에이전트를 역할별로 나누는 이유",
+    "date": "2026-09-25",
+    "tags": [
+      "claude-code"
+    ],
+    "summary": "Plan·Build·Review·Embed 사이클로 앱 둘을 만들었다. Review 가 따로였기에 CSS 버그와 리렌더 낭비를 잡았다."
+  },
+  {
     "slug": "claude-code-deny-rules",
     "category": "daystudy",
     "part": 7,

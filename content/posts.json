@@ -1,5 +1,16 @@
 [
   {
+    "slug": "daystudy-10",
+    "category": "daystudy",
+    "part": 10,
+    "title": "폴더 대신 목록 파일이 진실인 이유",
+    "date": "2026-09-29",
+    "tags": [
+      "web"
+    ],
+    "summary": "브라우저는 폴더 안을 못 읽는다. posts.json 처럼 apps.json 을 만들어 웹앱 목록의 진실로 삼은 이유."
+  },
+  {
     "slug": "claude-code-deny-rules",
     "category": "daystudy",
     "part": 7,

@@ -44,38 +44,58 @@ function safeUrl(url) {
   return u;
 }
 
+// 강조. 굵게를 먼저 처리해야 ** 가 * 두 개로 쪼개지지 않는다.
+function renderEmphasis(s) {
+  s = s.replace(/\*\*([^\n]+?)\*\*/g, '<strong>$1</strong>');
+  s = s.replace(/(^|[^*])\*([^*\n]+?)\*(?!\*)/g, '$1<em>$2</em>');
+  return s.replace(/~~([^~\n]+?)~~/g, '<del>$1</del>');
+}
+
 // 인라인 문법. 입력은 아직 이스케이프되지 않은 원문이다.
-// 순서가 중요하다: 코드 → 이미지 → 링크 → 굵게 → 기울임 → 취소선.
+// 순서가 중요하다: 코드 → 이미지 → 링크 → 강조.
+//
+// 코드·이미지·링크는 만든 즉시 자리표시자로 **치워 둔다.** 그러지 않으면 뒤에 오는 강조
+// 정규식이 이미 만들어진 href="..." 안쪽까지 훑어서 URL 을 망가뜨린다 —
+// [배포 노트](https://example.com/*release*) 의 *release* 가 <em>release</em> 로 바뀌어
+// 링크가 엉뚱한 주소로 간다. 큰따옴표는 이미 이스케이프돼 있어 XSS 는 아니지만
+// 아무 경고 없이 조용히 깨진다.
 export function renderInline(text) {
-  // 1) 인라인 코드를 먼저 뽑아 자리표시자로 바꾼다. 코드 안은 다른 문법을 적용하지 않는다.
-  const codes = [];
-  let s = text.replace(/`([^`\n]+)`/g, (_, code) => {
-    codes.push(`<code>${escapeHtml(code)}</code>`);
-    return `\u0000${codes.length - 1}\u0000`;
-  });
+  const parts = [];
+  const hold = (html) => {
+    parts.push(html);
+    return `\u0000${parts.length - 1}\u0000`;
+  };
+
+  // 자리표시자에 쓰는 NUL 이 원문에 있으면 복원 단계가 엉킨다. 글에 쓸 문자가 아니므로 떼어낸다.
+  let s = text.replace(/\u0000/g, '');
+
+  // 1) 인라인 코드. 코드 안은 다른 문법을 적용하지 않는다.
+  s = s.replace(/`([^`\n]+)`/g, (_, code) => hold(`<code>${escapeHtml(code)}</code>`));
 
   s = escapeHtml(s);
 
   // 2) 이미지 — 링크보다 먼저 (같은 [..](..) 모양이라 ! 유무로 구분)
   s = s.replace(/!\[([^\]]*)\]\(((?:[^()\s]|\([^()\s]*\))+)(?:\s+&quot;([^&]*)&quot;)?\)/g, (_, alt, src, title) => {
     const t = title ? ` title="${title}"` : '';
-    return `<img src="${safeUrl(src)}" alt="${alt}"${t}>`;
+    return hold(`<img src="${safeUrl(src)}" alt="${alt}"${t}>`);
   });
 
-  // 3) 링크
+  // 3) 링크. 라벨에는 강조를 먹여야 하므로 라벨만 따로 돌리고, 완성된 태그를 치워 둔다.
   s = s.replace(/\[([^\]]+)\]\(((?:[^()\s]|\([^()\s]*\))+)\)/g, (_, label, href) => {
     const h = safeUrl(href);
     const ext = /^https?:\/\//i.test(h) ? ' target="_blank" rel="noopener"' : '';
-    return `<a href="${h}"${ext}>${label}</a>`;
+    return hold(`<a href="${h}"${ext}>${renderEmphasis(label)}</a>`);
   });
 
-  // 4) 강조. 굵게를 먼저 처리해야 ** 가 * 두 개로 쪼개지지 않는다.
-  s = s.replace(/\*\*([^\n]+?)\*\*/g, '<strong>$1</strong>');
-  s = s.replace(/(^|[^*])\*([^*\n]+?)\*(?!\*)/g, '$1<em>$2</em>');
-  s = s.replace(/~~([^~\n]+?)~~/g, '<del>$1</del>');
+  // 4) 남은 본문의 강조
+  s = renderEmphasis(s);
 
-  // 5) 자리표시자 복원
-  s = s.replace(/\u0000(\d+)\u0000/g, (_, i) => codes[Number(i)]);
+  // 5) 자리표시자 복원. 치워 둔 조각 안에 또 자리표시자가 있을 수 있어(링크 라벨 안의
+  //    인라인 코드 등) 남지 않을 때까지 돈다. 중첩이 깊어도 몇 번이면 끝나고, 상한을 둬서
+  //    어떤 입력에도 멈추지 않는 일이 없게 한다.
+  for (let pass = 0; pass < 5 && s.includes('\u0000'); pass++) {
+    s = s.replace(/\u0000(\d+)\u0000/g, (_, i) => parts[Number(i)] ?? '');
+  }
   return s;
 }
 

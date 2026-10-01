@@ -29,29 +29,92 @@ const INDEX_URL = './content/posts.json';
 const APPS_URL = './content/apps.json';
 const postUrl = slug => `./content/posts/${encodeURIComponent(slug)}.md`;
 const appUrl = slug => `./apps/${encodeURIComponent(slug)}/`;
+// 카드 링크도 라우터와 같은 규칙으로 만든다. 한쪽만 인코딩이 빠지면 slug 에 / 나 % 가
+// 들어간 날 링크가 라우터 정규식에 안 맞거나 디코딩에서 터진다.
+const postHash = slug => `#/post/${encodeURIComponent(slug)}`;
+
+// slug 는 주소이자 파일명이다. 영문 소문자·숫자·하이픈만 — CLAUDE.md 의 Daystudy 규칙과 같다.
+const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+// 해시 조각 디코딩. 잘못 인코딩된 주소(#/tag/%)는 URIError 를 던지므로 null 로 받는다 —
+// 그대로 두면 "URI malformed" 같은 내부 문장이 사용자 화면에 뜬다.
+function decodeSegment(raw) {
+  try { return decodeURIComponent(raw); } catch { return null; }
+}
+
+// 최신순 정렬. 같은 날짜면 Daystudy 번호가 큰 쪽이 먼저
+const byDateDesc = (a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : (b.part || 0) - (a.part || 0));
+
+// ---------------------------------------------------------------- 목록 적재
+
+// JSON 이 파싱된다는 것과 내용이 멀쩡하다는 것은 다른 얘기다. 매일 19:00 Daystudy 클라우드
+// 루틴이 posts.json 을 PR 로 고치므로 필드가 빈 항목이 들어올 경로가 실제로 있다.
+// 그때 사용자가 보는 것이 `posts.sort is not a function` 이어서는 안 된다.
+const filled = v => typeof v === 'string' && v.trim() !== '';
+
+function checkArray(value, what) {
+  if (!Array.isArray(value)) throw new Error(`${what} 형식이 올바르지 않아요. 목록(배열)이어야 해요.`);
+  return value;
+}
+
+function checkPosts(value) {
+  for (const p of checkArray(value, '글 목록')) {
+    if (!p || !filled(p.slug) || !filled(p.title) || !filled(p.date) || !filled(p.category)) {
+      throw new Error('글 목록에 필수 정보(slug · title · date · category)가 빠진 항목이 있어요.');
+    }
+  }
+  return value;
+}
+
+function checkApps(value) {
+  for (const a of checkArray(value, '웹앱 목록')) {
+    if (!a || !filled(a.slug) || !filled(a.title) || !filled(a.date)) {
+      throw new Error('웹앱 목록에 필수 정보(slug · title · date)가 빠진 항목이 있어요.');
+    }
+  }
+  return value;
+}
+
+// res.json() 이 던지는 SyntaxError 는 브라우저마다 문장이 다르고 사용자에게 뜻이 없다.
+async function readJson(res, what) {
+  try { return await res.json(); } catch { throw new Error(`${what} 파일이 깨졌어요. JSON 형식을 확인해 주세요.`); }
+}
 
 let indexCache = null;
+let indexPending = null;
 let appsCache = null;
+let appsPending = null;
 
-async function loadIndex() {
-  if (indexCache) return indexCache;
-  const res = await fetch(INDEX_URL);
-  if (!res.ok) throw new Error(`posts.json 을 불러오지 못했어요 (${res.status})`);
-  const posts = await res.json();
-  // 최신순. 같은 날짜면 Daystudy 번호가 큰 쪽이 먼저
-  posts.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : (b.part || 0) - (a.part || 0)));
-  indexCache = posts;
-  return posts;
+// 적재 중인 약속도 같이 들고 있는다. 완료된 배열만 캐시하면 첫 적재가 끝나기 전에 들어온
+// 호출마다 fetch 가 새로 뜬다. 실패하면 약속을 비워 다음 시도가 다시 받게 한다.
+function loadIndex() {
+  if (indexCache) return Promise.resolve(indexCache);
+  if (indexPending) return indexPending;
+  indexPending = (async () => {
+    const res = await fetch(INDEX_URL);
+    if (!res.ok) throw new Error(`글 목록을 불러오지 못했어요 (${res.status}).`);
+    const posts = checkPosts(await readJson(res, '글 목록'));
+    posts.sort(byDateDesc);
+    indexCache = posts;
+    return posts;
+  })().finally(() => { indexPending = null; });
+  return indexPending;
 }
 
 // 웹앱 목록. 순서는 apps.json 에 적힌 대로(최신이 위)
-async function loadApps() {
-  if (appsCache) return appsCache;
-  const res = await fetch(APPS_URL);
-  if (!res.ok) throw new Error(`apps.json 을 불러오지 못했어요 (${res.status})`);
-  appsCache = await res.json();
-  return appsCache;
+function loadApps() {
+  if (appsCache) return Promise.resolve(appsCache);
+  if (appsPending) return appsPending;
+  appsPending = (async () => {
+    const res = await fetch(APPS_URL);
+    if (!res.ok) throw new Error(`웹앱 목록을 불러오지 못했어요 (${res.status}).`);
+    appsCache = checkApps(await readJson(res, '웹앱 목록'));
+    return appsCache;
+  })().finally(() => { appsPending = null; });
+  return appsPending;
 }
+
+// ---------------------------------------------------------------- 조각
 
 function tpl(id) {
   return document.getElementById(id).content.firstElementChild.cloneNode(true);
@@ -123,12 +186,27 @@ function fillKicker(el, post) {
   el.hidden = false;
 }
 
-function show(node, title) {
+// ---------------------------------------------------------------- 라우팅 세대
+
+// 해시가 빨리 바뀌면 먼저 시작한 적재가 나중에 끝날 수 있다. 그때 늦게 온 쪽이 화면을
+// 덮으면 주소와 내용이 어긋난다 — 세대 번호를 들고 다니며 현재 것만 화면을 건드린다.
+let routeVersion = 0;
+const stale = version => version !== routeVersion;
+
+function show(node, title, version) {
+  if (stale(version)) return;
   // 히어로는 목록 화면에서만
   document.getElementById('hero').hidden = !node.classList.contains('view--list');
   app.replaceChildren(node);
   document.title = title ? `${title} — ${SITE_TITLE}` : SITE_TITLE;
   window.scrollTo({ top: 0, behavior: 'instant' });
+  // 화면을 통째로 바꿨으니 포커스도 새 화면으로 옮긴다. 안 그러면 키보드로 카드를 눌러
+  // 들어간 사람의 포커스가 사라진 요소에 남고, 스크린 리더는 전환을 알리지 못한다.
+  // 대상은 화면 제목으로 한정한다 — `h1, h2` 로 찾으면 목록에서 첫 카드 제목을 집어
+  // 맨 위가 아니라 글 하나에 포커스가 얹힌다. 목록은 제목이 없으니 화면 자체로.
+  const target = node.querySelector('.post-header__title, .error__title') || node;
+  target.tabIndex = -1;
+  target.focus({ preventScroll: true });
 }
 
 function showLoading() {
@@ -142,7 +220,7 @@ function showLoading() {
 
 function makeCard(post) {
   const card = tpl('tpl-card');
-  card.querySelector('.post-card__link').href = `#/post/${post.slug}`;
+  card.querySelector('.post-card__link').href = postHash(post.slug);
   const time = card.querySelector('.post-card__date');
   time.dateTime = post.date;
   time.textContent = formatDate(post.date);
@@ -165,23 +243,36 @@ function makeAppCard(app) {
 }
 
 // 헤더의 카테고리 바를 현재 화면에 맞춰 다시 채운다. 어느 화면에서든 보인다.
-async function syncNav(current) {
+async function syncNav(current, version) {
   const [posts, apps] = await Promise.all([loadIndex(), loadApps()]);
+  if (stale(version)) return;
   fillCats(document.querySelector('.site-nav .cats'), posts, apps, current);
 }
 
-// 최신순 정렬. 같은 날짜면 Daystudy 번호가 큰 쪽이 먼저
-const byDateDesc = (a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : (b.part || 0) - (a.part || 0));
-
 // 목록은 언제나 최신순 한 줄. 전체는 글과 웹앱을 섞고, 카테고리·주제는 거르기만 한다.
-async function renderList({ category = null, tag = null } = {}) {
+async function renderList({ category = null, tag = null, version } = {}) {
   const [posts, apps] = await Promise.all([loadIndex(), loadApps()]);
-  const view = tpl('tpl-list');
-  const list = view.querySelector('.post-list');
+  if (stale(version)) return;
 
   // 주제는 Daystudy 안의 것이므로, 주제로 걸러도 카테고리 바에서는 Daystudy 가 선택된 상태
   if (tag) category = 'daystudy';
-  await syncNav(category);
+
+  // 없는 카테고리·주제는 빈 목록이 아니라 오류로 알린다. 기준은 「표시 이름 표에 있나」가
+  // 아니라 「데이터에 실제로 쓰이나」다 — CATEGORIES 에 없는 값도 posts.json 에 있으면
+  // 보여주는 것이 의도이므로(위 주석), 표가 아니라 글을 보고 판단한다.
+  if (category && category !== APPS && !posts.some(p => p.category === category)) {
+    await syncNav(null, version);
+    return renderError('그런 카테고리는 없어요.', version);
+  }
+  if (tag && !posts.some(p => (p.tags || []).includes(tag))) {
+    await syncNav(null, version);
+    return renderError('그런 주제는 없어요.', version);
+  }
+
+  const view = tpl('tpl-list');
+  const list = view.querySelector('.post-list');
+  await syncNav(category, version);
+  if (stale(version)) return;
 
   // 글과 앱을 한 목록에. 앱은 kind 로 구분해 카드 모양을 고른다
   let shown = [
@@ -205,18 +296,22 @@ async function renderList({ category = null, tag = null } = {}) {
 
   for (const item of shown) list.append(item.kind === 'app' ? makeAppCard(item) : makeCard(item));
 
-  show(view, title);
+  show(view, title, version);
 }
 
-async function renderPost(slug) {
+async function renderPost(slug, version) {
   const posts = await loadIndex();
+  if (stale(version)) return;
   const meta = posts.find(p => p.slug === slug);
-  await syncNav(meta ? meta.category : null);
-  if (!meta) return renderError(`"${slug}" 라는 글은 목록에 없어요.`);
+  await syncNav(meta ? meta.category : null, version);
+  if (stale(version)) return;
+  if (!meta) return renderError(`"${slug}" 라는 글은 목록에 없어요.`, version);
 
   const res = await fetch(postUrl(slug));
-  if (!res.ok) return renderError(`글 파일을 불러오지 못했어요 (${res.status}).`);
+  if (stale(version)) return;
+  if (!res.ok) return renderError(`글 파일을 불러오지 못했어요 (${res.status}).`, version);
   const src = await res.text();
+  if (stale(version)) return;
 
   // 프런트매터에 있는 값은 posts.json 이 우선한다
   const { meta: fm } = parseFrontmatter(src);
@@ -232,18 +327,24 @@ async function renderPost(slug) {
   view.querySelector('.prose').innerHTML = render(src);
 
   const kicker = kickerOf(meta);
-  show(view, kicker ? `${kicker} — ${title}` : title);
+  show(view, kicker ? `${kicker} — ${title}` : title, version);
 }
 
-function renderError(message) {
+function renderError(message, version) {
   const view = tpl('tpl-error');
   view.querySelector('.error__message').textContent = message;
-  show(view, '찾을 수 없음');
+  show(view, '찾을 수 없음', version);
 }
 
 // ---------------------------------------------------------------- 라우터
 
+async function badAddress(version) {
+  await syncNav(null, version);
+  renderError('주소가 올바르지 않아요.', version);
+}
+
 async function route() {
+  const version = ++routeVersion;
   const hash = location.hash.replace(/^#/, '') || '/';
   const post = hash.match(/^\/post\/([^/]+)\/?$/);
   const cat = hash.match(/^\/cat\/([^/]+)\/?$/);
@@ -251,15 +352,26 @@ async function route() {
 
   showLoading();
   try {
-    if (hash === '/') return await renderList();
-    if (cat) return await renderList({ category: decodeURIComponent(cat[1]) });
-    if (tag) return await renderList({ tag: decodeURIComponent(tag[1]) });
-    if (post) return await renderPost(decodeURIComponent(post[1]));
-    await syncNav(null);
-    renderError('주소가 올바르지 않아요.');
+    if (hash === '/') return await renderList({ version });
+    if (cat) {
+      const name = decodeSegment(cat[1]);
+      return name === null ? await badAddress(version) : await renderList({ category: name, version });
+    }
+    if (tag) {
+      const name = decodeSegment(tag[1]);
+      return name === null ? await badAddress(version) : await renderList({ tag: name, version });
+    }
+    if (post) {
+      const slug = decodeSegment(post[1]);
+      // slug 는 파일 경로가 된다. 문법을 여기서 막으면 잘못된 목록 항목도 같이 걸린다.
+      if (slug === null || !SLUG_RE.test(slug)) return await badAddress(version);
+      return await renderPost(slug, version);
+    }
+    await badAddress(version);
   } catch (err) {
     console.error(err);
-    renderError(err.message || '알 수 없는 오류가 났어요.');
+    if (stale(version)) return;
+    renderError(err.message || '알 수 없는 오류가 났어요.', version);
   }
 }
 

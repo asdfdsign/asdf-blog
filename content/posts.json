@@ -1,5 +1,16 @@
 [
   {
+    "slug": "daystudy-10",
+    "category": "daystudy",
+    "part": 10,
+    "title": "마크다운 파서의 처리 순서와 자리표시자",
+    "date": "2026-10-03",
+    "tags": [
+      "markdown"
+    ],
+    "summary": "링크 주소 안쪽까지 훑는 강조 정규식이 href를 깨뜨렸다. 완성된 조각을 자리표시자로 치워 두는 법."
+  },
+  {
     "slug": "claude-code-deny-rules",
     "category": "daystudy",
     "part": 7,

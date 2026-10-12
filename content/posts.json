@@ -1,5 +1,16 @@
 [
   {
+    "slug": "daystudy-10",
+    "category": "daystudy",
+    "part": 10,
+    "title": "경쟁 조건과 자리표시자 기법",
+    "date": "2026-10-12",
+    "tags": [
+      "javascript"
+    ],
+    "summary": "코덱스 리뷰가 찾은 버그 둘 — 링크 안쪽까지 훑는 정규식, 느린 응답이 새 화면을 덮는 경쟁 조건."
+  },
+  {
     "slug": "claude-code-deny-rules",
     "category": "daystudy",
     "part": 7,

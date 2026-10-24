@@ -1,5 +1,16 @@
 [
   {
+    "slug": "daystudy-10",
+    "category": "daystudy",
+    "part": 10,
+    "title": "자리표시자와 세대 번호",
+    "date": "2026-10-24",
+    "tags": [
+      "javascript"
+    ],
+    "summary": "코덱스 리뷰로 찾은 두 버그 — 완성된 HTML을 다시 훑는 정규식, 느린 응답이 새 화면을 덮는 경쟁 조건."
+  },
+  {
     "slug": "claude-code-deny-rules",
     "category": "daystudy",
     "part": 7,

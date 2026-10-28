@@ -1,5 +1,16 @@
 [
   {
+    "slug": "daystudy-10",
+    "category": "daystudy",
+    "part": 10,
+    "title": "리뷰가 잡아낸 버그 세 가지 — 정규식·타이밍·외부 데이터",
+    "date": "2026-10-28",
+    "tags": [
+      "javascript"
+    ],
+    "summary": "블로그 본체 첫 코드 리뷰에서 나온 정규식 순서, 비동기 레이스, 데이터 검증 버그 세 가지."
+  },
+  {
     "slug": "claude-code-deny-rules",
     "category": "daystudy",
     "part": 7,

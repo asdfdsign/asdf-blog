@@ -1,5 +1,16 @@
 [
   {
+    "slug": "daystudy-10",
+    "category": "daystudy",
+    "part": 10,
+    "title": "데이터와 화면을 가르는 이유",
+    "date": "2026-11-02",
+    "tags": [
+      "javascript"
+    ],
+    "summary": "앱 카드를 index.html에 직접 적던 걸 그만두고, 글처럼 apps.json을 읽어 틀에 채우는 방식으로 바꿨다."
+  },
+  {
     "slug": "claude-code-deny-rules",
     "category": "daystudy",
     "part": 7,

@@ -1,5 +1,16 @@
 [
   {
+    "slug": "daystudy-10",
+    "category": "daystudy",
+    "part": 10,
+    "title": "레이스 컨디션과 탐욕적 정규식 — 코드 리뷰로 잡은 버그 둘",
+    "date": "2026-11-05",
+    "tags": [
+      "javascript"
+    ],
+    "summary": "블로그 본체 첫 코드 리뷰. 비동기 라우팅의 레이스 컨디션, 링크를 깨뜨리는 탐욕적 정규식, 방어적 JSON 검증."
+  },
+  {
     "slug": "claude-code-deny-rules",
     "category": "daystudy",
     "part": 7,

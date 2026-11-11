@@ -1,5 +1,16 @@
 [
   {
+    "slug": "daystudy-10",
+    "category": "daystudy",
+    "part": 10,
+    "title": "라우팅 세대 번호 — 비동기 요청의 경쟁 상태",
+    "date": "2026-11-11",
+    "tags": [
+      "javascript"
+    ],
+    "summary": "글을 빨리 바꿔 누르면 늦게 끝난 요청이 화면을 덮는 문제 — 세대 번호로 최신 요청만 반영하게 고쳤다."
+  },
+  {
     "slug": "claude-code-deny-rules",
     "category": "daystudy",
     "part": 7,
